@@ -1,0 +1,18 @@
+# Start with light version of Python
+FROM python:3.9-slim
+
+# Setup workdirectry
+WORKDIR /app
+
+# Copy requirements and install indepencies
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Copy the rest of the app
+COPY . .
+
+# Expose de poort 9100
+EXPOSE 9100
+
+# Start the FastAPI-app with Uvicorn on port 9100
+CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "9100"]
