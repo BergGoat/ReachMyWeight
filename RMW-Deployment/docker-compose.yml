@@ -1,0 +1,16 @@
+version: '3.8'
+
+services:
+  app:
+    image: steelduck1/python_ci-cd_test:latest
+    container_name: my-service-container
+    ports:
+      - "9002:9002"  # Pas de poorten aan indien nodig
+    restart: always
+    env_file:
+      - secret.env  # Koppelt het secret.env bestand
+    deploy:
+      replicas: 1  # Schaal tijdelijk op tijdens het proces
+      update_config:
+        parallelism: 1
+        delay: 10s
