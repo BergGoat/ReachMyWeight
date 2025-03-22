@@ -27,9 +27,11 @@ jobs:
           python-version: '3.9'
 
       - name: Install dependencies
+        working-directory: RMW-Deployment
         run: pip install -r requirements.txt
 
       - name: Run tests
+        working-directory: RMW-Deployment
         run: pytest
 
       - name: Set up Docker Buildx
@@ -52,7 +54,7 @@ jobs:
         id: build-and-push
         uses: docker/build-push-action@v5
         with:
-          context: .
+          context: RMW-Deployment
           push: true
           tags: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
           labels: ${{ steps.meta.outputs.labels }}
