@@ -16,7 +16,7 @@ jobs:
     environment: docker
     env:
       REGISTRY: docker.io
-      IMAGE_NAME: steelduck1/RMW-Database 
+      IMAGE_NAME: steelduck1/rmw-database 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
