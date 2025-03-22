@@ -4,7 +4,7 @@ services:
   Deployment:
     image: steelduck1/RMW-Deployment:latest
     ports:
-      - "9000:9000"
+      - "8080:8080"
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock  # Zorg dat de container de Docker daemon kan aansturen
     environment:
@@ -13,7 +13,7 @@ services:
   Backend:
     image: steelduck1/RMW-Backend:latest
     ports:
-      - "9100:9000"
+      - "8001:8000"
     deploy:
       replicas: 2  # Use 2 replicas for zero downtime
       update_config:
@@ -26,11 +26,27 @@ services:
   Database:
     image: steelduck1/RMW-Database:latest
     ports:
-      - "9200:9200"
+      - "8002:8000"
     volumes:
       - db-data:/app/db  # Persistent volume for database storage
     deploy:
       replicas: 1  # Only one instance for the database to avoid conflicts
+      restart_policy:
+        condition: any
+
+  Frontend:
+    image: steelduck1/RMW-Frontend:latest
+    ports:
+      - "8000:8000"
+    environment:
+      - ORIGINAL_API_URL=http://Backend:8000
+      - DATABASE_API_URL=http://Database:8000
+    deploy:
+      replicas: 2
+      update_config:
+        parallelism: 1
+        delay: 5s
+        order: start-first
       restart_policy:
         condition: any
 

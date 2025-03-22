@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Gewicht Invoeren - ReachMyWeight</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="/static/css/styles.css">
+</head>
+<body>
+    <div class="container">
+        <header class="bg-primary text-white p-4 mb-4 rounded">
+            <div class="d-flex justify-content-between align-items-center">
+                <h1>ReachMyWeight</h1>
+                <div>
+                    <span class="me-3">Ingelogd als: {{ username }}</span>
+                    <a href="/login" class="btn btn-light btn-sm">Uitloggen</a>
+                </div>
+            </div>
+        </header>
+
+        <div class="row">
+            <div class="col-md-8 offset-md-2">
+                <div class="card">
+                    <div class="card-header bg-primary text-white">
+                        <h3 class="card-title mb-0">Gewicht en Doelgegevens Invoeren</h3>
+                    </div>
+                    <div class="card-body">
+                        {% if error %}
+                        <div class="alert alert-danger">{{ error }}</div>
+                        {% endif %}
+                        
+                        <form action="/entry" method="post">
+                            <div class="row mb-3">
+                                <div class="col-md-6">
+                                    <label for="weight" class="form-label">Huidig Gewicht (kg)</label>
+                                    <input type="number" step="0.1" class="form-control" id="weight" name="weight" required>
+                                </div>
+                                <div class="col-md-6">
+                                    <label for="goal_weight" class="form-label">Doel Gewicht (kg)</label>
+                                    <input type="number" step="0.1" class="form-control" id="goal_weight" name="goal_weight" required>
+                                </div>
+                            </div>
+
+                            <div class="row mb-3">
+                                <div class="col-md-6">
+                                    <label for="gender" class="form-label">Geslacht</label>
+                                    <select class="form-select" id="gender" name="gender">
+                                        <option value="male" {% if gender == 'male' %}selected{% endif %}>Man</option>
+                                        <option value="female" {% if gender == 'female' %}selected{% endif %}>Vrouw</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-6">
+                                    <label for="height" class="form-label">Lengte (cm)</label>
+                                    <input type="number" class="form-control" id="height" name="height" value="{{ height }}">
+                                </div>
+                            </div>
+
+                            <div class="row mb-3">
+                                <div class="col-md-6">
+                                    <label for="age" class="form-label">Leeftijd</label>
+                                    <input type="number" class="form-control" id="age" name="age" value="{{ age }}">
+                                </div>
+                                <div class="col-md-6">
+                                    <label for="activity_level" class="form-label">Activiteitsniveau</label>
+                                    <select class="form-select" id="activity_level" name="activity_level">
+                                        <option value="sedentary" {% if activity_level == 'sedentary' %}selected{% endif %}>Sedentair</option>
+                                        <option value="light" {% if activity_level == 'light' %}selected{% endif %}>Licht Actief</option>
+                                        <option value="moderate" {% if activity_level == 'moderate' %}selected{% endif %}>Gemiddeld Actief</option>
+                                        <option value="active" {% if activity_level == 'active' %}selected{% endif %}>Zeer Actief</option>
+                                        <option value="very_active" {% if activity_level == 'very_active' %}selected{% endif %}>Extreem Actief</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div class="row mb-3">
+                                <div class="col-md-6">
+                                    <label for="sport" class="form-label">Sport (optioneel)</label>
+                                    <select multiple class="form-select" id="sport" name="sport">
+                                        <option value="Running">Hardlopen</option>
+                                        <option value="Swimming">Zwemmen</option>
+                                        <option value="Cycling">Fietsen</option>
+                                        <option value="Football">Voetbal</option>
+                                        <option value="Basketball">Basketbal</option>
+                                        <option value="Tennis">Tennis</option>
+                                        <option value="Hiking">Wandelen</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-6">
+                                    <label for="aantal_minuten_sporten" class="form-label">Minuten Sport per Week</label>
+                                    <input type="number" class="form-control" id="aantal_minuten_sporten" name="aantal_minuten_sporten" value="0">
+                                </div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="deficit_surplus" class="form-label">Calorisch Tekort/Overschot per Dag</label>
+                                <input type="number" class="form-control" id="deficit_surplus" name="deficit_surplus" value="500">
+                                <div class="form-text">Positief voor gewichtsverlies, negatief voor aankomen.</div>
+                            </div>
+
+                            <div class="d-flex justify-content-between">
+                                <a href="/dashboard" class="btn btn-secondary">Terug naar Dashboard</a>
+                                <button type="submit" class="btn btn-primary">Opslaan</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html> 
