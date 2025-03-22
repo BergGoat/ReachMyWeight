@@ -1,4 +1,4 @@
-name: Build and Deploy Backend
+name: Build and Deploy Database
 
 on:
   pull_request:
@@ -10,12 +10,12 @@ permissions:
 
 jobs:
   build-deploy:
-    if: github.event.pull_request.merged == true && github.event.pull_request.head.ref == 'Backend'
+    if: github.event.pull_request.merged == true && github.event.pull_request.head.ref == 'Database'
     runs-on: ubuntu-latest
     environment: docker
     env:
       REGISTRY: docker.io
-      IMAGE_NAME: steelduck1/RMW-Backend 
+      IMAGE_NAME: steelduck1/RMW-Database 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
@@ -26,12 +26,12 @@ jobs:
           python-version: '3.9'
 
       - name: Install dependencies
-        working-directory: RMW-Backend
+        working-directory: RMW-Database
         run: pip install -r requirements.txt
 
       # Add tests when they become available
       # - name: Run tests
-      #   working-directory: RMW-Backend
+      #   working-directory: RMW-Database
       #   run: pytest
 
       - name: Set up Docker Buildx
@@ -54,7 +54,7 @@ jobs:
         id: build-and-push
         uses: docker/build-push-action@v5
         with:
-          context: RMW-Backend
+          context: RMW-Database
           push: true
           tags: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
           labels: ${{ steps.meta.outputs.labels }}
@@ -67,7 +67,7 @@ jobs:
           DEPLOY_API_KEY: ${{ secrets.DEPLOY_API_KEY }}
         run: |
           echo "Triggering redeploy..."
-          REDEPLOY_URL="http://kanslozeknapen.eu:9000/redeploy?api_key=${DEPLOY_API_KEY}&service=backend"
+          REDEPLOY_URL="http://kanslozeknapen.eu:9000/redeploy?api_key=${DEPLOY_API_KEY}&service=database"
           redeploy_response=$(curl -s -X POST "$REDEPLOY_URL")
           echo "Redeploy response:"
           echo "$redeploy_response"
