@@ -11,11 +11,11 @@ RUN apt-get update && \
 
 WORKDIR /app
 
-# Installeer Python-afhankelijkheden (bijvoorbeeld FastAPI en uvicorn)
-RUN pip install --no-cache-dir fastapi uvicorn
+# Installeer Python-afhankelijkheden met specifieke versies
+RUN pip install --no-cache-dir fastapi==0.95.1 pydantic==1.10.8 uvicorn httpx
 
 # Kopieer de redeploy.py naar de container
 COPY redeploy.py .
 
-# Start de redeploy-service met uvicorn op poort 9000
-CMD ["uvicorn", "redeploy:app", "--host", "0.0.0.0", "--port", "9000"]
+# Start de redeploy-service met uvicorn op poort 8080
+CMD ["uvicorn", "redeploy:app", "--host", "0.0.0.0", "--port", "8080"]
