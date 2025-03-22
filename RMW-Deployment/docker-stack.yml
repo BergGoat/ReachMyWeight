@@ -1,54 +1,61 @@
-version: "3.8"
+version: '3.8'
 
 services:
-  Deployment:
-    image: steelduck1/RMW-Deployment:latest
+  rmw_deployment:
+    image: steelduck1/rmw-deployment:latest
     ports:
       - "8080:8080"
-    volumes:
-      - /var/run/docker.sock:/var/run/docker.sock  # Zorg dat de container de Docker daemon kan aansturen
     environment:
-      - DEPLOY_API_KEY=Belastingdienst321!  # Stel hier jouw gewenste API key in
+      - DEPLOY_API_KEY=your_deployment_api_key
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: any
+    networks:
+      - rmw-network
 
-  Backend:
-    image: steelduck1/RMW-Backend:latest
+  rmw_frontend:
+    image: steelduck1/rmw-frontend:latest
+    ports:
+      - "80:8000"
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: any
+    networks:
+      - rmw-network
+
+  rmw_backend:
+    image: steelduck1/rmw-backend:latest
+    ports:
+      - "8000:8000"
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: any
+    networks:
+      - rmw-network
+    depends_on:
+      - rmw_database
+
+  rmw_database:
+    image: steelduck1/rmw-database:latest
     ports:
       - "8001:8000"
     deploy:
-      replicas: 2  # Use 2 replicas for zero downtime
-      update_config:
-        parallelism: 1
-        delay: 5s  # Faster delay between updates
-        order: start-first  # Start new container before stopping the old one
+      replicas: 1
       restart_policy:
         condition: any
-
-  Database:
-    image: steelduck1/RMW-Database:latest
-    ports:
-      - "8002:8000"
     volumes:
-      - db-data:/app/db  # Persistent volume for database storage
-    deploy:
-      replicas: 1  # Only one instance for the database to avoid conflicts
-      restart_policy:
-        condition: any
+      - rmw_database_data:/app/data
+    networks:
+      - rmw-network
 
-  Frontend:
-    image: steelduck1/RMW-Frontend:latest
-    ports:
-      - "8000:8000"
-    environment:
-      - ORIGINAL_API_URL=http://Backend:8000
-      - DATABASE_API_URL=http://Database:8000
-    deploy:
-      replicas: 2
-      update_config:
-        parallelism: 1
-        delay: 5s
-        order: start-first
-      restart_policy:
-        condition: any
+networks:
+  rmw-network:
+    driver: overlay
 
 volumes:
-  db-data:  # Define the volume for database persistence
+  rmw_database_data:
