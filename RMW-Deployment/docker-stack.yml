@@ -1,8 +1,8 @@
 version: "3.8"
 
 services:
-  redeploy:
-    image: steelduck1/redeploy_service:latest
+  Deployment:
+    image: steelduck1/RMW-Deployment:latest
     ports:
       - "9000:9000"
     volumes:
@@ -10,10 +10,10 @@ services:
     environment:
       - DEPLOY_API_KEY=Belastingdienst321!  # Stel hier jouw gewenste API key in
 
-  calculator:
-    image: steelduck1/python_ci_cd_test:latest
+  Backend:
+    image: steelduck1/RMW-Backend:latest
     ports:
-      - "9001:9000"
+      - "9100:9000"
     deploy:
       replicas: 2  # Use 2 replicas for zero downtime
       update_config:
@@ -22,3 +22,17 @@ services:
         order: start-first  # Start new container before stopping the old one
       restart_policy:
         condition: any
+
+  Database:
+    image: steelduck1/RMW-Database:latest
+    ports:
+      - "9200:9200"
+    volumes:
+      - db-data:/app/db  # Persistent volume for database storage
+    deploy:
+      replicas: 1  # Only one instance for the database to avoid conflicts
+      restart_policy:
+        condition: any
+
+volumes:
+  db-data:  # Define the volume for database persistence
