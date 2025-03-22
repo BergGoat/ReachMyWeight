@@ -3,11 +3,6 @@ Gewichtstracker API en Webapplicatie
 ------------------
 Deze API bevat de frontend webapplicatie voor de gewichtstracker
 en maakt verbinding met de bestaande API voor berekeningen.
-
-Naam: [Jouw Naam]
-Studentnummer: [Jouw Studentnummer]
-Klas: [Jouw Klas]
-Datum: 22-03-2025
 """
 
 from fastapi import FastAPI, Request, Form, Depends, HTTPException, status
@@ -44,7 +39,7 @@ app.mount("/static", StaticFiles(directory="static"), name="static")
 DATABASE_FILE = "database/fitness.db"
 
 # URL van de bestaande API
-ORIGINAL_API_URL = os.environ.get("ORIGINAL_API_URL", "http://localhost:9100")
+ORIGINAL_API_URL = os.environ.get("ORIGINAL_API_URL", "http://localhost:8000")
 
 # Helper voor synchrone database operaties
 def run_sync_db(func: Callable, *args, **kwargs):
