@@ -1,0 +1,52 @@
+/* Extra CSS-stijlen voor de gewichtstracker app */
+
+/* Custom animatie voor de grafiek */
+#gewichtsGrafiek {
+    transition: all 0.3s ease;
+}
+
+#gewichtsGrafiek:hover {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+/* Stijl voor de actieve navigatieknop */
+.nav-active {
+    background-color: #dbeafe;
+    color: #1d4ed8;
+}
+
+/* Animatie voor het resultaatblok */
+.result-animation {
+    animation: fadeIn 0.5s ease-in-out;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Verbeterde tabelhover */
+tbody tr {
+    transition: background-color 0.2s ease;
+}
+
+tbody tr:hover {
+    background-color: #f3f4f6;
+}
+
+/* Responsieve tweaks voor mobiel */
+@media (max-width: 640px) {
+    .result-box {
+        padding: 1rem;
+    }
+    
+    .chart-container {
+        height: 250px;
+    }
+}
