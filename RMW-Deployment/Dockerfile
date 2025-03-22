@@ -1,18 +1,21 @@
-# Start met een lichte Python image
 FROM python:3.9-slim
 
-# Werkdirectory instellen
+# Installeer afhankelijkheden en de Docker CLI
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+    docker.io \
+    ca-certificates \
+    curl \
+    gnupg && \
+    rm -rf /var/lib/apt/lists/*
+
 WORKDIR /app
 
-# Kopieer de vereisten en installeer dependencies
-COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+# Installeer Python-afhankelijkheden (bijvoorbeeld FastAPI en uvicorn)
+RUN pip install --no-cache-dir fastapi uvicorn
 
-# Kopieer de rest van de app
-COPY . .
+# Kopieer de redeploy.py naar de container
+COPY redeploy.py .
 
-# Expose de poort 9000 (optioneel, puur informatief)
-EXPOSE 9000
-
-# Start de FastAPI-app met Uvicorn op poort 9000
-CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "9000"]
+# Start de redeploy-service met uvicorn op poort 9000
+CMD ["uvicorn", "redeploy:app", "--host", "0.0.0.0", "--port", "9000"]

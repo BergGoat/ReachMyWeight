@@ -1,0 +1,24 @@
+version: "3.8"
+
+services:
+  redeploy:
+    image: steelduck1/redeploy_service:latest
+    ports:
+      - "9000:9000"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock  # Zorg dat de container de Docker daemon kan aansturen
+    environment:
+      - DEPLOY_API_KEY=Belastingdienst321!  # Stel hier jouw gewenste API key in
+
+  calculator:
+    image: steelduck1/python_ci_cd_test:latest
+    ports:
+      - "9001:9000"
+    deploy:
+      replicas: 2  # Use 2 replicas for zero downtime
+      update_config:
+        parallelism: 1
+        delay: 5s  # Faster delay between updates
+        order: start-first  # Start new container before stopping the old one
+      restart_policy:
+        condition: any
