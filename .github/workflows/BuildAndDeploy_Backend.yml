@@ -67,7 +67,7 @@ jobs:
           DEPLOY_API_KEY: ${{ secrets.DEPLOY_API_KEY }}
         run: |
           echo "Triggering redeploy..."
-          REDEPLOY_URL="http://kanslozeknapen.eu:9000/redeploy?api_key=${DEPLOY_API_KEY}&service=backend"
+          REDEPLOY_URL="http://188.166.89.152:8080/redeploy?api_key=${DEPLOY_API_KEY}&service=backend"
           redeploy_response=$(curl -s -X POST "$REDEPLOY_URL")
           echo "Redeploy response:"
           echo "$redeploy_response"
