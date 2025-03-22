@@ -15,8 +15,8 @@ COPY RMW.sql .
 # Create a persistent volume for the database
 VOLUME /app/db
 
-# Expose port 9200
-EXPOSE 9200
+# Expose port 8000
+EXPOSE 8000
 
-# Start the FastAPI app with Uvicorn on port 9200
-CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "9200"] 
+# Start the FastAPI app with Uvicorn on port 8000
+CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"] 
