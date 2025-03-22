@@ -15,8 +15,11 @@ COPY RMW.sql .
 # Create a persistent volume for the database
 VOLUME /app/db
 
-# Expose port 8000
-EXPOSE 8000
+# Modify main.py to add check_same_thread=False to SQLite connections
+RUN sed -i 's/sqlite3\.connect("db\/RMW\.db")/sqlite3.connect("db\/RMW.db", check_same_thread=False)/g' main.py
 
-# Start the FastAPI app with Uvicorn on port 8000
-CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"] 
+# Expose port 8002
+EXPOSE 8002
+
+# Start the FastAPI app with Uvicorn on port 8002
+CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8002"] 
