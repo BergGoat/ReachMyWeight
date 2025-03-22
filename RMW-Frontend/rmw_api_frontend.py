@@ -10,7 +10,6 @@ from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
-import sqlite3
 import os
 import httpx
 from typing import List, Optional, Dict, Any, Callable
@@ -28,54 +27,14 @@ app = FastAPI(
 os.makedirs("templates", exist_ok=True)
 os.makedirs("static", exist_ok=True)
 os.makedirs("static/css", exist_ok=True)
-os.makedirs("sql", exist_ok=True)
-os.makedirs("database", exist_ok=True)
 
 # Configureer templates en statische bestanden
 templates = Jinja2Templates(directory="templates")
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
-# Configuratie voor de database
-DATABASE_FILE = "database/fitness.db"
-
-# URL van de bestaande API
-ORIGINAL_API_URL = os.environ.get("ORIGINAL_API_URL", "http://localhost:8000")
-
-# Helper voor synchrone database operaties
-def run_sync_db(func: Callable, *args, **kwargs):
-    """
-    Helper om synchrone database operaties uit te voeren in een asynchrone context.
-    Elk database operatie wordt in zijn eigen connectie uitgevoerd.
-    """
-    @functools.wraps(func)
-    def wrapped(*args, **kwargs):
-        conn = sqlite3.connect(DATABASE_FILE)
-        conn.row_factory = sqlite3.Row
-        try:
-            result = func(conn, *args, **kwargs)
-            conn.commit()
-            return result
-        except Exception as e:
-            conn.rollback()
-            raise e
-        finally:
-            conn.close()
-    
-    return wrapped
-
-# Database initialisatie
-def init_db():
-    """Initialiseert de database als deze nog niet bestaat."""
-    if not os.path.exists(DATABASE_FILE):
-        os.makedirs(os.path.dirname(DATABASE_FILE), exist_ok=True)
-        conn = sqlite3.connect(DATABASE_FILE)
-        try:
-            with open('sql/schema.sql', 'r') as f:
-                conn.executescript(f.read())
-            conn.commit()
-            print("Database geïnitialiseerd")
-        finally:
-            conn.close()
+# URL van de bestaande APIs
+ORIGINAL_API_URL = os.environ.get("ORIGINAL_API_URL", "http://Backend:8000")
+DATABASE_API_URL = os.environ.get("DATABASE_API_URL", "http://Database:8000")
 
 # Functie om met de originele API te communiceren
 async def call_original_api(data: Dict[str, Any]) -> Dict[str, Any]:
@@ -100,60 +59,92 @@ async def call_original_api(data: Dict[str, Any]) -> Dict[str, Any]:
                 detail=f"Kon geen verbinding maken met de originele API: {str(e)}"
             )
 
-# Database operaties
-@run_sync_db
-def db_check_user(conn, username: str, password: str):
-    """Controleert login gegevens."""
-    cursor = conn.cursor()
-    cursor.execute(
-        "SELECT * FROM users WHERE username = ? AND password = ?", 
-        (username, password)
-    )
-    return cursor.fetchone()
-
-@run_sync_db
-def db_get_weights(conn, user_id: int):
-    """Haalt gewichtsmetingen op voor een gebruiker."""
-    cursor = conn.cursor()
-    cursor.execute(
-        "SELECT * FROM weights WHERE user_id = ? ORDER BY date DESC", 
-        (user_id,)
-    )
-    return cursor.fetchall()
-
-@run_sync_db
-def db_get_user_profile(conn, user_id: int):
-    """Haalt profielgegevens op voor een gebruiker."""
-    cursor = conn.cursor()
-    cursor.execute("SELECT * FROM users WHERE id = ?", (user_id,))
-    user = cursor.fetchone()
+# Functie om met de database API te communiceren
+async def call_database_api(method: str, endpoint: str, data: Dict[str, Any] = None) -> Dict[str, Any]:
+    """
+    Roept de database API aan met de opgegeven methode, endpoint en data.
     
-    cursor.execute("SELECT * FROM profiles WHERE user_id = ?", (user_id,))
-    profile = cursor.fetchone()
+    Args:
+        method: HTTP methode (GET, POST, etc.)
+        endpoint: API endpoint (bijv. "/api/users")
+        data: Optional data om naar de API te sturen bij POST requests
+        
+    Returns:
+        De response van de API
+    """
+    async with httpx.AsyncClient() as client:
+        try:
+            if method.upper() == "GET":
+                response = await client.get(f"{DATABASE_API_URL}{endpoint}")
+            elif method.upper() == "POST":
+                response = await client.post(f"{DATABASE_API_URL}{endpoint}", json=data)
+            else:
+                raise ValueError(f"Ongeldige HTTP methode: {method}")
+                
+            response.raise_for_status()  # Raise exception voor HTTP errors
+            return response.json()
+        except httpx.HTTPError as e:
+            print(f"Database API Error: {e}")
+            raise HTTPException(
+                status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                detail=f"Kon geen verbinding maken met de database API: {str(e)}"
+            )
+
+# Database API operaties
+async def db_check_user(username: str, password: str):
+    """Controleert login gegevens via de Database API."""
+    try:
+        result = await call_database_api(
+            "POST", 
+            "/api/login", 
+            {"username": username, "password": password}
+        )
+        return result
+    except HTTPException as e:
+        if e.status_code == 401:
+            return None
+        raise e
+
+async def db_get_weights(user_id: int):
+    """Haalt gewichtsmetingen op voor een gebruiker via de Database API."""
+    return await call_database_api("GET", f"/api/weights/{user_id}")
+
+async def db_get_user_profile(user_id: int):
+    """Haalt profielgegevens op voor een gebruiker via de Database API."""
+    user = await call_database_api("GET", f"/api/users/{user_id}")
+    
+    try:
+        profile = await call_database_api("GET", f"/api/profiles/{user_id}")
+    except HTTPException as e:
+        if e.status_code == 404:
+            profile = None
+        else:
+            raise e
     
     return user, profile
 
-@run_sync_db
-def db_add_weight(conn, user_id: int, weight: float, goal_weight: float, date_str: str = None):
-    """Voegt een nieuwe gewichtsmeting toe."""
-    cursor = conn.cursor()
-    today = date.today().isoformat() if date_str is None else date_str
+async def db_add_weight(user_id: int, weight: float, goal_weight: float, date_str: str = None):
+    """Voegt een nieuwe gewichtsmeting toe via de Database API."""
+    data = {
+        "user_id": user_id,
+        "weight": weight,
+        "goal_weight": goal_weight
+    }
     
-    cursor.execute(
-        "INSERT INTO weights (user_id, weight, goal_weight, date) VALUES (?, ?, ?, ?)",
-        (user_id, weight, goal_weight, today)
-    )
+    if date_str:
+        data["date"] = date_str
     
-    new_id = cursor.lastrowid
-    cursor.execute("SELECT * FROM weights WHERE id = ?", (new_id,))
-    return cursor.fetchone()
+    return await call_database_api("POST", "/api/weights", data)
 
-@run_sync_db
-def db_check_user_exists(conn, user_id: int):
-    """Controleert of een gebruiker bestaat."""
-    cursor = conn.cursor()
-    cursor.execute("SELECT * FROM users WHERE id = ?", (user_id,))
-    return cursor.fetchone() is not None
+async def db_check_user_exists(user_id: int):
+    """Controleert of een gebruiker bestaat via de Database API."""
+    try:
+        await call_database_api("GET", f"/api/users/{user_id}")
+        return True
+    except HTTPException as e:
+        if e.status_code == 404:
+            return False
+        raise e
 
 # Datamodellen voor de API
 class UserInput(BaseModel):
@@ -189,11 +180,6 @@ class CalculationResult(BaseModel):
     current_weight: float
     goal_weight: float
 
-# Start database bij opstarten
-@app.on_event("startup")
-async def startup_event():
-    init_db()
-
 #
 # WEB ROUTES (HTML PAGINA'S)
 #
@@ -218,7 +204,7 @@ async def login(
     password: str = Form(...)
 ):
     """Verwerkt het inlogformulier."""
-    user = db_check_user(username, password)
+    user = await db_check_user(username, password)
     
     if not user:
         return templates.TemplateResponse(
@@ -240,7 +226,7 @@ async def dashboard(request: Request):
     if not username or not user_id:
         return RedirectResponse(url="/login")
     
-    entries = db_get_weights(int(user_id))
+    entries = await db_get_weights(int(user_id))
     
     return templates.TemplateResponse(
         "dashboard.html", 
@@ -248,17 +234,12 @@ async def dashboard(request: Request):
             "request": request, 
             "username": username, 
             "entries": entries,
-            "result": None  # Initieel is er geen resultaat
         }
     )
 
-@app.post("/add-weight", response_class=HTMLResponse)
-async def add_weight(
-    request: Request,
-    weight: float = Form(...),
-    goal_weight: float = Form(...)
-):
-    """Verwerkt het gewichtsinvoerformulier en roept de originele API aan."""
+@app.get("/entry", response_class=HTMLResponse)
+async def entry_page(request: Request, error: str = None):
+    """Rendert de pagina voor gewichtsinvoer."""
     username = request.cookies.get("username")
     user_id = request.cookies.get("user_id")
     
@@ -266,41 +247,52 @@ async def add_weight(
         return RedirectResponse(url="/login")
     
     # Haal gebruikersgegevens op
-    user, profile = db_get_user_profile(int(user_id))
+    user, profile = await db_get_user_profile(int(user_id))
     
-    gender = profile["gender"] if profile and "gender" in profile.keys() else "male"
-    height = profile["height"] if profile and "height" in profile.keys() else 180
-    age = profile["age"] if profile and "age" in profile.keys() else 30
-    activity_level = profile["activity_level"] if profile and "activity_level" in profile.keys() else "moderate"
+    gender = profile["gender"] if profile and "gender" in profile else "male"
+    height = profile["height"] if profile and "height" in profile else 170
+    age = profile["age"] if profile and "age" in profile else 30
+    activity_level = profile["activity_level"] if profile and "activity_level" in profile else "moderate"
     
-    # Bereid data voor om naar de originele API te sturen
-    api_data = {
-        "gender": gender,
-        "weight": weight,
-        "height": height,
-        "age": age,
-        "activity_level": activity_level,
-        "sport": ["Football"],  # Standaard sport
-        "aantal_minuten_sporten": 30,  # Standaard minuten
-        "gewenst_gewicht": goal_weight,
-        "deficit_surplus": 500  # Standaard calorisch tekort/overschot
-    }
+    return templates.TemplateResponse(
+        "entry.html", 
+        {
+            "request": request, 
+            "username": username,
+            "gender": gender,
+            "height": height,
+            "age": age,
+            "activity_level": activity_level,
+            "error": error
+        }
+    )
+
+@app.post("/entry", response_class=HTMLResponse)
+async def handle_entry(
+    request: Request,
+    weight: float = Form(...),
+    goal_weight: float = Form(...),
+    gender: str = Form(...),
+    height: float = Form(...),
+    age: int = Form(...),
+    activity_level: str = Form(...),
+    # De volgende parameters zijn optioneel
+    sport: List[str] = Form([]),
+    aantal_minuten_sporten: int = Form(0),
+    deficit_surplus: int = Form(0)
+):
+    """Verwerkt het formulier voor gewichtsinvoer."""
+    username = request.cookies.get("username")
+    user_id = request.cookies.get("user_id")
     
-    # Roep de originele API aan
-    try:
-        api_result = await call_original_api(api_data)
-        # Gebruik het eerste resultaat uit de lijst
-        days = api_result["results"][0]["time_to_reach_goal"] if api_result["results"] else 0
-    except Exception as e:
-        # Als er een fout is, toon een bericht
-        print(f"Fout bij aanroepen originele API: {str(e)}")
-        days = 0  # Default waarde
+    if not username or not user_id:
+        return RedirectResponse(url="/login")
     
     # Sla gegevens op
-    db_add_weight(int(user_id), weight, goal_weight)
+    await db_add_weight(int(user_id), weight, goal_weight)
     
     # Haal gewichtsgeschiedenis op
-    entries = db_get_weights(int(user_id))
+    entries = await db_get_weights(int(user_id))
     
     return templates.TemplateResponse(
         "dashboard.html", 
@@ -308,7 +300,7 @@ async def add_weight(
             "request": request, 
             "username": username, 
             "entries": entries,
-            "result": {"days": round(days, 1)}
+            "result": None
         }
     )
 
@@ -332,112 +324,71 @@ async def api_docs(request: Request):
         {"request": request}
     )
 
-@app.get("/api/weights/{user_id}", response_model=List[WeightResponse])
-async def get_weight_entries(user_id: int):
+@app.get("/api/weights/{user_id}", response_model=List[Dict[str, Any]])
+async def get_weights(user_id: int):
     """
-    Haalt de gewichtsmetingen op voor een specifieke gebruiker.
+    API endpoint voor het ophalen van gewichtsmetingen.
     
     Args:
-        user_id: De ID van de gebruiker
+        user_id: ID van de gebruiker
         
     Returns:
         Een lijst met gewichtsmetingen voor de gebruiker
     """
-    entries = db_get_weights(user_id)
+    entries = await db_get_weights(user_id)
     
     # Als er geen metingen zijn, geef een lege lijst terug
     if not entries:
         return []
     
-    # Zet de resultaten om naar het response model
-    return [
-        {
-            "id": entry["id"],
-            "user_id": entry["user_id"],
-            "weight": entry["weight"],
-            "goal_weight": entry["goal_weight"],
-            "date": entry["date"]
-        }
-        for entry in entries
-    ]
+    return entries
 
-@app.post("/api/weights/", response_model=WeightResponse, status_code=status.HTTP_201_CREATED)
-async def create_weight_entry(entry: WeightEntry):
+@app.post("/api/weights", response_model=Dict[str, Any])
+async def add_weight(entry: WeightEntry):
     """
-    Voegt een nieuwe gewichtsmeting toe aan de database.
+    API endpoint voor het toevoegen van een gewichtsmeting.
     
     Args:
-        entry: De gewichtsinvoer gegevens
+        entry: Data voor de nieuwe gewichtsmeting
         
     Returns:
         De toegevoegde gewichtsmeting
     """
     # Controleer of de gebruiker bestaat
-    if not db_check_user_exists(entry.user_id):
+    if not await db_check_user_exists(entry.user_id):
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, 
-            detail="Gebruiker niet gevonden"
+            detail=f"Gebruiker met ID {entry.user_id} bestaat niet"
         )
     
     # Voeg gewichtsmeting toe
     try:
-        result = db_add_weight(
+        result = await db_add_weight(
             entry.user_id, entry.weight, entry.goal_weight, entry.date
         )
+        return result
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Database fout: {str(e)}"
+            detail=f"Kon gewichtsmeting niet toevoegen: {str(e)}"
         )
-    
-    # Zet het resultaat om naar het response model
-    return {
-        "id": result["id"],
-        "user_id": result["user_id"],
-        "weight": result["weight"],
-        "goal_weight": result["goal_weight"],
-        "date": result["date"]
-    }
 
-@app.post("/api/calculate/", response_model=CalculationResult)
-async def calculate_time(entry: WeightEntry):
+@app.post("/api/calculate", response_model=CalculationResult)
+async def calculate(data: UserInput):
     """
-    Berekent de tijd die nodig is om een gewichtsdoel te bereiken door de originele API aan te roepen.
+    API endpoint voor het berekenen van de tijd tot doel.
     
     Args:
-        entry: De gewichtsinvoer gegevens
+        data: Invoergegevens voor de berekening
         
     Returns:
-        Het resultaat van de berekening
+        Resultaat van de berekening
     """
-    # Standaardwaarden voor API-aanroep
-    api_data = {
-        "gender": "male",  # Standaard gender
-        "weight": entry.weight,
-        "height": 180,  # Standaard hoogte
-        "age": 30,  # Standaard leeftijd
-        "activity_level": "moderate",  # Standaard activiteitsniveau
-        "sport": ["Football"],  # Standaard sport
-        "aantal_minuten_sporten": 30,  # Standaard minuten
-        "gewenst_gewicht": entry.goal_weight,
-        "deficit_surplus": 500  # Standaard calorisch tekort/overschot
-    }
+    # Roep de originele API aan voor de berekening
+    result = await call_original_api(data.dict())
     
-    # Roep de originele API aan
-    api_result = await call_original_api(api_data)
-    
-    # Gebruik het eerste resultaat uit de lijst
-    days = api_result["results"][0]["time_to_reach_goal"] if api_result["results"] else 0
-    
-    # Geef het resultaat terug
     return {
-        "days_to_goal": round(days, 1),
-        "current_weight": entry.weight,
-        "goal_weight": entry.goal_weight
+        "days_to_goal": result.get("days_to_goal", 0),
+        "current_weight": data.weight,
+        "goal_weight": data.gewenst_gewicht
     }
-
-# Start de applicatie
-if __name__ == "__main__":
-    import uvicorn
-    print("Starting Gewichtstracker App op poort 9200...")
-    uvicorn.run(app, host="0.0.0.0", port=9200)

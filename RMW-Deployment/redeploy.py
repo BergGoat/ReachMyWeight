@@ -100,6 +100,24 @@ async def redeploy(
                 )
                 
                 return {"message": f"Redeployment triggered for {service}", "output": result.stdout}
+            elif service == "frontend":
+                # Update the frontend service
+                pull_command = "docker pull steelduck1/RMW-Frontend:latest"
+                subprocess.run(pull_command, shell=True, check=True)
+                
+                update_command = (
+                    "docker service update --force --with-registry-auth "
+                    "--image steelduck1/RMW-Frontend:latest mijn_stack_Frontend"
+                )
+                result = subprocess.run(
+                    update_command,
+                    shell=True,
+                    check=True,
+                    capture_output=True,
+                    text=True
+                )
+                
+                return {"message": f"Redeployment triggered for {service}", "output": result.stdout}
             else:
                 raise HTTPException(status_code=400, detail=f"Unsupported service: {service}")
         else:
