@@ -20,6 +20,9 @@ services:
     image: steelduck1/rmw-frontend:latest
     ports:
       - "80:8000"
+    environment:
+      - DATABASE_URL=http://rmw_rmw_database:8002
+      - BACKEND_URL=http://rmw_rmw_backend:8001
     deploy:
       replicas: 1
       restart_policy:
@@ -30,7 +33,9 @@ services:
   rmw_backend:
     image: steelduck1/rmw-backend:latest
     ports:
-      - "8000:8000"
+      - "8000:8001"
+    environment:
+      - DATABASE_URL=http://rmw_rmw_database:8002
     deploy:
       replicas: 1
       restart_policy:
@@ -43,7 +48,9 @@ services:
   rmw_database:
     image: steelduck1/rmw-database:latest
     ports:
-      - "8001:8000"
+      - "8001:8002"
+    environment:
+      - SQLITE_CONNECTION_PARAMS=check_same_thread=False
     deploy:
       replicas: 1
       restart_policy:
