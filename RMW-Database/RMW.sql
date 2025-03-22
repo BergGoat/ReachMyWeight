@@ -1,5 +1,4 @@
 -- ReachMYWeight Database Frontend
--- Gebruikers tabel (voor inloggen)
 CREATE TABLE users (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     username TEXT UNIQUE NOT NULL,
