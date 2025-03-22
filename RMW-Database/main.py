@@ -11,7 +11,7 @@ os.makedirs("db", exist_ok=True)
 
 # Initialize the database
 def get_db():
-    conn = sqlite3.connect("db/RMW.db")
+    conn = sqlite3.connect("db/RMW.db", check_same_thread=False)
     conn.row_factory = sqlite3.Row
     try:
         yield conn
@@ -20,7 +20,7 @@ def get_db():
 
 # Initialize database with schema if it doesn't exist
 def init_db():
-    conn = sqlite3.connect("db/RMW.db")
+    conn = sqlite3.connect("db/RMW.db", check_same_thread=False)
     with open("RMW.sql") as f:
         conn.executescript(f.read())
     conn.close()
