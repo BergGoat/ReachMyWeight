@@ -7,6 +7,8 @@ services:
       - "8080:8080"
     environment:
       - DEPLOY_API_KEY=Belastingdienst321!
+      - DOCKER_USERNAME=steelduck1
+      - DOCKER_PASSWORD=dckr_pat_kGDJWvFImSRa5a5auIM5m0a2zLR1
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
     deploy:
@@ -22,7 +24,7 @@ services:
       - "80:8000"
     environment:
       - DATABASE_API_URL=http://rmw_database:8002
-      - ORIGINAL_API_URL=http://rmw_backend:8000
+      - ORIGINAL_API_URL=http://rmw_backend:8001
     deploy:
       replicas: 1
       restart_policy:
@@ -33,7 +35,7 @@ services:
   rmw_backend:
     image: steelduck1/rmw-backend:latest
     ports:
-      - "8000:8000"
+      - "8001:8001"
     environment:
       - DATABASE_API_URL=http://rmw_database:8002
     deploy:
@@ -48,7 +50,7 @@ services:
   rmw_database:
     image: steelduck1/rmw-database:latest
     ports:
-      - "8001:8002"
+      - "8002:8002"
     environment:
       - SQLITE_CONNECTION_PARAMS=check_same_thread=False
     deploy:
