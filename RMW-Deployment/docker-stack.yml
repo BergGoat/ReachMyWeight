@@ -6,7 +6,7 @@ services:
     ports:
       - "8080:8080"
     environment:
-      - DEPLOY_API_KEY=your_deployment_api_key
+      - DEPLOY_API_KEY=Belastingdienst321!
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
     deploy:
