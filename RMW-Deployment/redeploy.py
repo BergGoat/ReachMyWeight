@@ -9,7 +9,7 @@ DEPLOY_API_KEY = os.environ.get("DEPLOY_API_KEY", "default_key")
 
 # Docker Hub credentials 
 DOCKER_USERNAME = "steelduck1"
-DOCKER_PASSWORD = "dckr_pat_kGDJWvFImSRa5a5auIM5m0a2zLR1"
+DOCKER_PASSWORD = "dckr_pat_ciYxQ_0d2NT-rjPSLiPSxCFkh2w"
 
 # Service configuration mapping
 SERVICE_CONFIG = {
