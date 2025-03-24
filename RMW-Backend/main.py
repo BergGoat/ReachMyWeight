@@ -36,7 +36,7 @@ def calculate_time(sport, weight, gewenst_gewicht, time, deficit_surplus):
 
 def calculate_bmr(weight, height, age, gender):
     if gender.lower() == "male":
-        return (10 * weight) + (6.25 * height) - (5 * age) + 5
+        return (10 * weight) + (6.25 * height) - (10 * age) + 5
     elif gender.lower() == "female":
         return (10 * weight) + (6.25 * height) - (5 * age) - 161
     else:
