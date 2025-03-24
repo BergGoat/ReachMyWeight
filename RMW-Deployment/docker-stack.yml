@@ -21,8 +21,8 @@ services:
     ports:
       - "80:8000"
     environment:
-      - DATABASE_URL=http://rmw_rmw_database:8002
-      - BACKEND_URL=http://rmw_rmw_backend:8001
+      - DATABASE_API_URL=http://rmw_database:8002
+      - ORIGINAL_API_URL=http://rmw_backend:8000
     deploy:
       replicas: 1
       restart_policy:
@@ -33,9 +33,9 @@ services:
   rmw_backend:
     image: steelduck1/rmw-backend:latest
     ports:
-      - "8000:8001"
+      - "8000:8000"
     environment:
-      - DATABASE_URL=http://rmw_rmw_database:8002
+      - DATABASE_API_URL=http://rmw_database:8002
     deploy:
       replicas: 1
       restart_policy:

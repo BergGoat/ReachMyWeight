@@ -69,10 +69,10 @@ jobs:
           echo "$redeploy_response"
           if echo "$redeploy_response" | grep -q "Redeployment triggered"; then
             echo "Redeployment triggered detected."
-            echo "::set-output name=status::complete"
+            echo "status=complete" >> $GITHUB_OUTPUT
           else
             echo "Redeployment trigger message not detected."
-            echo "::set-output name=status::incomplete"
+            echo "status=incomplete" >> $GITHUB_OUTPUT
           fi
 
       - name: Wait for Redeployment Completion
