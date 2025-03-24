@@ -15,19 +15,19 @@ DOCKER_PASSWORD = "dckr_pat_ciYxQ_0d2NT-rjPSLiPSxCFkh2w"
 SERVICE_CONFIG = {
     "frontend": {
         "image": "steelduck1/rmw-frontend:latest",
-        "service_name": "rmw_frontend"
+        "service_name": "rmw_rmw_frontend"
     },
     "backend": {
         "image": "steelduck1/rmw-backend:latest",
-        "service_name": "rmw_backend"
+        "service_name": "rmw_rmw_backend"
     },
     "database": {
         "image": "steelduck1/rmw-database:latest",
-        "service_name": "rmw_database"
+        "service_name": "rmw_rmw_database"
     },
     "deployment": {
         "image": "steelduck1/rmw-deployment:latest",
-        "service_name": "rmw_deployment"
+        "service_name": "rmw_rmw_deployment"
     }
 }
 
