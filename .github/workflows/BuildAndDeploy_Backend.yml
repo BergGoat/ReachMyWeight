@@ -3,69 +3,64 @@ name: Build and Deploy Backend
 on:
   workflow_dispatch:
   pull_request:
-    branches: ["main"]
-    types: [closed]
-
-permissions:
-  contents: read
+    branches: [ main ]
+    paths:
+      - 'RMW-Backend/**'
+      - '.github/workflows/BuildAndDeploy_Backend.yml'
 
 jobs:
-  build-deploy:
-    if: github.event.pull_request.merged == true && github.event.pull_request.head.ref == 'Backend' || github.event_name == 'workflow_dispatch'
+  build-and-deploy:
     runs-on: ubuntu-latest
-    environment: docker
-    env:
-      REGISTRY: docker.io
-      IMAGE_NAME: steelduck1/rmw-backend 
+    if: github.event_name == 'workflow_dispatch' || (github.event_name == 'pull_request' && github.event.pull_request.merged == true && github.head_ref == 'Backend')
+    
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v3
-
+      - uses: actions/checkout@v3
+      
       - name: Set up Python
-        uses: actions/setup-python@v3
+        uses: actions/setup-python@v4
         with:
           python-version: '3.9'
-
+          
       - name: Install dependencies
         working-directory: RMW-Backend
-        run: pip install -r requirements.txt
-
-      # Add tests when they become available
-      # - name: Run tests
-      #   working-directory: RMW-Backend
-      #   run: pytest
-
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-
-      - name: Log in to Docker Hub
-        env:
-          DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
-          DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
         run: |
-          echo "${DOCKER_PASSWORD}" | docker login -u "${DOCKER_USERNAME}" --password-stdin
-
+          pip install -r requirements.txt
+          pip install pytest
+          
+      - name: Run tests
+        working-directory: RMW-Backend
+        run: pytest Test.py -v
+          
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+        
+      - name: Login to Docker Hub
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+          
       - name: Extract Docker metadata
         id: meta
-        uses: docker/metadata-action@v5
+        uses: docker/metadata-action@v4
         with:
-          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
-
+          images: steelduck1/rmw-backend
+          tags: |
+            type=ref,event=branch
+            type=ref,event=pr
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=sha,format=long
+          
       - name: Build and push Docker image
-        id: build-and-push
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v4
         with:
-          context: RMW-Backend
+          context: ./RMW-Backend
           push: true
-          tags: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
+          tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
-
-      - name: Trigger Redeploy
-        id: trigger_redeploy
-        env:
-          DEPLOY_API_KEY: ${{ secrets.DEPLOY_API_KEY }}
+          
+      - name: Trigger redeploy
         run: |
           echo "Triggering redeploy..."
           REDEPLOY_URL="http://188.166.89.152:8080/redeploy?api_key=${DEPLOY_API_KEY}&service=backend"
@@ -79,11 +74,14 @@ jobs:
             echo "Redeployment trigger message not detected."
             echo "status=incomplete" >> $GITHUB_OUTPUT
           fi
-
-      - name: Wait for Redeployment Completion
+        env:
+          DEPLOY_API_KEY: ${{ secrets.DEPLOY_API_KEY }}
+          
+      - name: Wait for redeployment completion
         run: |
-          if [ "${{ steps.trigger_redeploy.outputs.status }}" = "complete" ]; then
+          if [ "${{ steps.redeploy.outputs.status }}" = "complete" ]; then
             echo "Redeployment complete based on trigger message."
           else
-            echo "Redeployment not complete. Exiting." && exit 1
+            echo "Redeployment not complete. Exiting."
+            exit 1
           fi 
