@@ -1,0 +1,67 @@
+name: Measure Deployment Changes
+
+on:
+  workflow_dispatch:  # Allows manual triggering
+
+jobs:
+  measure:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Measure API Response Times
+        run: |
+          # Define the API URL and JSON payload
+          API_URL="http://188.166.89.152:8001/calculate"
+          JSON_PAYLOAD='{
+            "gender": "male",
+            "weight": 80,
+            "height": 180,
+            "age": 28,
+            "activity_level": "moderate",
+            "sport": ["Football"],
+            "aantal_minuten_sporten": 60,
+            "gewenst_gewicht": 75,
+            "deficit_surplus": -500
+          }'
+          
+          # Start time with high precision
+          start=$(date +%s.%N)
+          sum=0
+          count=0
+          # Array to store ping results
+          ping_results=()
+          
+          # Loop for 120 seconds
+          while true; do
+            now=$(date +%s.%N)
+            elapsed=$(echo "$now - $start" | bc -l)
+            if (( $(echo "$elapsed >= 120" | bc -l) )); then
+              break
+            fi
+            
+            # Make the curl request with JSON payload
+            output=$(curl -s -X POST \
+              -H "Content-Type: application/json" \
+              -d "$JSON_PAYLOAD" \
+              -w "\n%{time_total}" \
+              "$API_URL")
+            
+            # Split output: last line is ping time, rest is response
+            ping=$(echo "$output" | tail -n1)
+            result=$(echo "$output" | sed '$d')
+            
+            ping_results+=("$ping")
+            sum=$(echo "$sum + $ping" | bc -l)
+            count=$((count + 1))
+            echo "Request $count: $ping sec (elapsed: $elapsed sec) result: $result"
+            sleep 0.2
+          done
+          
+          # Calculate average
+          avg=$(echo "scale=4; $sum / $count" | bc -l)
+          echo ""
+          echo "===== Request Results ====="
+          echo "Total requests: $count"
+          echo "Average response time: $avg sec"
+          echo "Top 3 longest responses:"
+          # Sort array descending and select top 3
+          printf "%s\n" "${ping_results[@]}" | sort -nr | head -n 3 

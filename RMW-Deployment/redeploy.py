@@ -7,9 +7,9 @@ app = FastAPI()
 # Get API key from the environment
 DEPLOY_API_KEY = os.environ.get("DEPLOY_API_KEY", "default_key")
 
-# Docker Hub credentials 
-DOCKER_USERNAME = "steelduck1"
-DOCKER_PASSWORD = "dckr_pat_ciYxQ_0d2NT-rjPSLiPSxCFkh2w"
+# Docker Hub credentials from environment
+DOCKER_USERNAME = os.environ.get("DOCKER_USERNAME", "steelduck1")
+DOCKER_PASSWORD = os.environ.get("DOCKER_PASSWORD", "dckr_pat_kGDJWvFImSRa5a5auIM5m0a2zLR1")
 
 # Service configuration mapping
 SERVICE_CONFIG = {
