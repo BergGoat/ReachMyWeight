@@ -55,8 +55,9 @@ async def redeploy(
         
         # 3. Update the service with the new image
         update_command = (
-            f"docker service update --force --with-registry-auth "
-            f"--image {config['image']} {config['service_name']}"
+            f"docker service update --with-registry-auth "
+            f"--image {config['image']} {config['service_name']} "
+            f"--update-parallelism 1 --update-delay 10s --update-order start-first"
         )
         result = subprocess.run(
             update_command,
