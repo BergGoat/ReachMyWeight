@@ -25,7 +25,6 @@ jobs:
         working-directory: RMW-Backend
         run: |
           pip install -r requirements.txt
-          pip install pytest
           
       - name: Run tests
         working-directory: RMW-Backend
