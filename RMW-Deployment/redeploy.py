@@ -76,7 +76,7 @@ async def redeploy(
                 print(f"Container contents: {result_list.stdout}")
                 
                 # Run a container with the monitoring image, mounting the temp directory
-                extract_command = f"docker run --rm -v {tmpdirname}:/target --user root {config['image']} /bin/sh -c 'cp -rv /app/monitoring/* /target/ && chown -R 1000:1000 /target && chmod -R 755 /target && ls -la /target'"
+                extract_command = f"docker run --rm -v {tmpdirname}:/target --user root {config['image']} /bin/sh -c 'mkdir -p /target && cp -rv /app/monitoring/* /target/ && chown -R 1000:1000 /target && chmod -R 755 /target && ls -la /target'"
                 result_extract = subprocess.run(extract_command, shell=True, check=True, capture_output=True, text=True)
                 print(f"Extraction output: {result_extract.stdout}")
                 
