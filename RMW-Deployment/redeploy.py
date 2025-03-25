@@ -8,8 +8,8 @@ app = FastAPI()
 DEPLOY_API_KEY = os.environ.get("DEPLOY_API_KEY", "default_key")
 
 # Docker Hub credentials from environment
-DOCKER_USERNAME = os.environ.get("DOCKER_USERNAME")
-DOCKER_PASSWORD = os.environ.get("DOCKER_PASSWORD")
+DOCKER_USERNAME = os.environ.get("DOCKER_USERNAME", "steelduck1")
+DOCKER_PASSWORD = os.environ.get("DOCKER_PASSWORD", "dckr_pat_kGDJWvFImSRa5a5auIM5m0a2zLR1")
 
 # Service configuration mapping
 SERVICE_CONFIG = {
@@ -45,13 +45,9 @@ async def redeploy(
     config = SERVICE_CONFIG[service]
     
     try:
-        # 1. Log in to Docker Hub if credentials are available
-        if DOCKER_USERNAME and DOCKER_PASSWORD:
-            login_command = f"echo {DOCKER_PASSWORD} | docker login --username {DOCKER_USERNAME} --password-stdin"
-            subprocess.run(login_command, shell=True, check=True)
-        else:
-            # Skip login and assume Docker is already logged in or using no-auth registry
-            print("Docker credentials not provided. Skipping Docker login.")
+        # 1. Log in to Docker Hub
+        login_command = f"echo {DOCKER_PASSWORD} | docker login --username {DOCKER_USERNAME} --password-stdin"
+        subprocess.run(login_command, shell=True, check=True)
         
         # 2. Pull the latest image
         pull_command = f"docker pull {config['image']}"
