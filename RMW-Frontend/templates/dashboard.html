@@ -69,11 +69,17 @@
                                             </div>
                                             <div class="flex justify-between mb-1">
                                                 <span>Dagelijkse calorie-inname:</span>
-                                                <span>{{ (light_option.tdee - 250)|round }} kcal</span>
+                                                <span>{{ light_results[0].goal|round }} kcal</span>
                                             </div>
                                             <div class="flex justify-between">
-                                                <span>Totaal te verliezen:</span>
-                                                <span>{{ calculation_results.weight_difference }} kg</span>
+                                                <span>
+                                                    {% if calculation_results.current_weight < calculation_results.goal_weight %}
+                                                        Totaal aan te komen:
+                                                    {% else %}
+                                                        Totaal te verliezen:
+                                                    {% endif %}
+                                                </span>
+                                                <span>{{ calculation_results.weight_difference|round(1) }} kg</span>
                                             </div>
                                         </div>
                                     </div>
@@ -103,11 +109,17 @@
                                             </div>
                                             <div class="flex justify-between mb-1">
                                                 <span>Dagelijkse calorie-inname:</span>
-                                                <span>{{ (standard_option.tdee - 500)|round }} kcal</span>
+                                                <span>{{ standard_results[0].goal|round }} kcal</span>
                                             </div>
                                             <div class="flex justify-between">
-                                                <span>Totaal te verliezen:</span>
-                                                <span>{{ calculation_results.weight_difference }} kg</span>
+                                                <span>
+                                                    {% if calculation_results.current_weight < calculation_results.goal_weight %}
+                                                        Totaal aan te komen:
+                                                    {% else %}
+                                                        Totaal te verliezen:
+                                                    {% endif %}
+                                                </span>
+                                                <span>{{ calculation_results.weight_difference|round(1) }} kg</span>
                                             </div>
                                         </div>
                                     </div>
@@ -137,11 +149,17 @@
                                             </div>
                                             <div class="flex justify-between mb-1">
                                                 <span>Dagelijkse calorie-inname:</span>
-                                                <span>{{ (intensive_option.tdee - 1000)|round }} kcal</span>
+                                                <span>{{ intensive_results[0].goal|round }} kcal</span>
                                             </div>
                                             <div class="flex justify-between">
-                                                <span>Totaal te verliezen:</span>
-                                                <span>{{ calculation_results.weight_difference }} kg</span>
+                                                <span>
+                                                    {% if calculation_results.current_weight < calculation_results.goal_weight %}
+                                                        Totaal aan te komen:
+                                                    {% else %}
+                                                        Totaal te verliezen:
+                                                    {% endif %}
+                                                </span>
+                                                <span>{{ calculation_results.weight_difference|round(1) }} kg</span>
                                             </div>
                                         </div>
                                     </div>
