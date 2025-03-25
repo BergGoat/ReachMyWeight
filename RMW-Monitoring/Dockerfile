@@ -3,31 +3,38 @@ FROM alpine:latest
 # Install necessary tools
 RUN apk add --no-cache docker-cli curl
 
-# Create directories
-RUN mkdir -p /app/monitoring
+# Create app user to avoid permission issues
+RUN adduser -D -u 1000 appuser
+
+# Create directories and set permissions
+RUN mkdir -p /app/monitoring && \
+    chown -R appuser:appuser /app
 
 # Copy all monitoring configuration files
-COPY . /app/monitoring/
+COPY --chown=appuser:appuser . /app/monitoring/
 
 # Set working directory
 WORKDIR /app/monitoring
 
-# List files for debugging
-RUN echo "Files in /app/monitoring:" && \
-    ls -la /app/monitoring && \
-    echo "Docker stack file:" && \
-    cat /app/monitoring/docker-stack.yml
+# Verify files are present and accessible
+RUN ls -la /app/monitoring && \
+    echo "Content of docker-stack.yml:" && \
+    cat docker-stack.yml
 
-# Make the deploy script executable
-RUN chmod +x /app/monitoring/deploy.sh || echo "No deploy.sh script present"
-
-# Add a simple entrypoint script to help with extraction
+# Create an extraction script that ensures proper permissions
 RUN echo '#!/bin/sh' > /extract.sh && \
-    echo 'cp -rv /app/monitoring/* "$1"' >> /extract.sh && \
-    echo 'echo "Copied files to $1:"' >> /extract.sh && \
-    echo 'ls -la "$1"' >> /extract.sh && \
+    echo 'set -e' >> /extract.sh && \
+    echo 'TARGET_DIR="$1"' >> /extract.sh && \
+    echo 'echo "Copying files to $TARGET_DIR"' >> /extract.sh && \
+    echo 'cp -rv /app/monitoring/* "$TARGET_DIR/"' >> /extract.sh && \
+    echo 'echo "Setting permissions..."' >> /extract.sh && \
+    echo 'chown -R 1000:1000 "$TARGET_DIR"' >> /extract.sh && \
+    echo 'chmod -R 755 "$TARGET_DIR"' >> /extract.sh && \
+    echo 'echo "Files in target directory:"' >> /extract.sh && \
+    echo 'ls -la "$TARGET_DIR"' >> /extract.sh && \
     chmod +x /extract.sh
 
-# The container doesn't need to run as a daemon, it will be used to deploy the stack
-ENTRYPOINT ["/bin/sh"]
-CMD ["-c", "echo 'RMW-Monitoring container - Use /extract.sh /your/destination to extract files'"] 
+USER appuser
+
+# The container doesn't need to run as a daemon
+CMD ["sh", "-c", "echo 'RMW-Monitoring container - Files are in /app/monitoring'"] 

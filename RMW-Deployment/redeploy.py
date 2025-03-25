@@ -67,9 +67,16 @@ async def redeploy(
             # For monitoring, we use a special approach:
             # Create a temporary directory to extract the monitoring files
             with tempfile.TemporaryDirectory() as tmpdirname:
+                # Set proper permissions on the temporary directory
+                os.chmod(tmpdirname, 0o755)
+                
+                # First, try to list the contents of the container
+                list_command = f"docker run --rm {config['image']} ls -la /app/monitoring"
+                result_list = subprocess.run(list_command, shell=True, check=True, capture_output=True, text=True)
+                print(f"Container contents: {result_list.stdout}")
+                
                 # Run a container with the monitoring image, mounting the temp directory
-                # Use the extraction script we created in the Dockerfile
-                extract_command = f"docker run --rm -v {tmpdirname}:/extract_dir {config['image']} /extract.sh /extract_dir"
+                extract_command = f"docker run --rm -v {tmpdirname}:/target --user root {config['image']} /bin/sh -c 'cp -rv /app/monitoring/* /target/ && chown -R 1000:1000 /target && chmod -R 755 /target && ls -la /target'"
                 result_extract = subprocess.run(extract_command, shell=True, check=True, capture_output=True, text=True)
                 print(f"Extraction output: {result_extract.stdout}")
                 
@@ -82,7 +89,10 @@ async def redeploy(
                         status_code=500, 
                         detail=f"docker-stack.yml file not found in the extracted monitoring files. Contents: {os.listdir(tmpdirname)}"
                     )
-                    
+                
+                # Make sure the stack file is readable
+                os.chmod(f"{tmpdirname}/docker-stack.yml", 0o644)
+                
                 # Deploy the stack with the extracted files
                 stack_command = f"cd {tmpdirname} && docker stack deploy -c docker-stack.yml {config['stack_name']} --with-registry-auth"
                 result = subprocess.run(
