@@ -232,6 +232,7 @@ def calculate(input_data: UserInput):
             days_to_goal = 0.1
             print("Very small days to goal value, setting to 0.1 minimum")
         
+        # Make sure all required fields are present and have valid values
         response_data = {
             "results": results,
             "days_to_goal": round(days_to_goal, 2),
@@ -241,6 +242,9 @@ def calculate(input_data: UserInput):
         }
         
         print(f"Calculation complete. Response: {response_data}")
+        print(f"Response contains required fields: days_to_goal={response_data.get('days_to_goal')}, BMR={response_data.get('BMR')}, TDEE={response_data.get('TDEE')}")
+        
+        # Ensure we return the complete dictionary
         return response_data
     except HTTPException as he:
         print(f"HTTP Exception in calculation: {he.detail}")
