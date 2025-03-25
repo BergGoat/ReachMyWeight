@@ -5,11 +5,11 @@ import os
 app = FastAPI()
 
 # Get API key from the environment
-DEPLOY_API_KEY = os.environ.get("DEPLOY_API_KEY", "default_key")
+DEPLOY_API_KEY = os.environ.get("DEPLOY_API_KEY", "Belastingdienst321!")
 
 # Docker Hub credentials from environment
 DOCKER_USERNAME = os.environ.get("DOCKER_USERNAME", "steelduck1")
-DOCKER_PASSWORD = os.environ.get("DOCKER_PASSWORD", "dckr_pat_kGDJWvFImSRa5a5auIM5m0a2zLR1")
+DOCKER_PASSWORD = os.environ.get("DOCKER_PASSWORD", "dckr_pat_TpcaLQTc0H7-1P_yi2JN54qoqnY")
 
 # Service configuration mapping
 SERVICE_CONFIG = {
