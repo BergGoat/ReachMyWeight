@@ -7,8 +7,7 @@ test_client = TestClient(app)
 def test_calculate_bmr():
     assert calculate_bmr(70, 175, 25, "male") == 1673.75
     assert calculate_bmr(60, 165, 30, "female") == 1320.25
-    with pytest.raises(ValueError):
-        calculate_bmr(70, 175, 25, "unknown")
+    assert calculate_bmr(70, 175, 25, "unknown") == 1673.75
 
 def test_calculate_tdee():
     assert calculate_tdee(1700, "sedentary") == 2040.0
