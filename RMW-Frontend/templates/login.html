@@ -3,68 +3,62 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Inloggen - ReachMyWeight</title>
-    <!-- Tailwind CSS via CDN -->
-    <script src="https://cdn.tailwindcss.com"></script>
+    <title>Gewichtstracker - Login</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
 </head>
-<body class="bg-gradient-to-r from-blue-100 to-purple-100 min-h-screen flex items-center justify-center">
-    <div class="bg-white p-8 rounded-xl shadow-lg w-full max-w-md">
-        <!-- Logo en titel -->
-        <div class="text-center mb-8">
-            <h1 class="text-3xl font-bold text-gray-800">ReachMy<span class="text-blue-500">Weight</span></h1>
-            <p class="text-gray-500 mt-2">Houd je gewicht bij en bereik je doelen!</p>
-        </div>
-
-        <!-- Foutmelding (indien nodig) -->
-        {% if error %}
-        <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
-            <p>{{ error }}</p>
-        </div>
-        {% endif %}
-
-        <!-- Inlogformulier -->
-        <form method="post" action="/login" class="space-y-6">
-            <!-- Gebruikersnaam -->
-            <div>
-                <label for="username" class="block text-sm font-medium text-gray-700 mb-1">Gebruikersnaam</label>
-                <input type="text" id="username" name="username" required
-                    class="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+<body class="bg-gray-100 min-h-screen">
+    <div class="flex items-center justify-center min-h-screen bg-gradient-to-r from-blue-100 to-blue-50">
+        <div class="w-full max-w-md p-8">
+            <div class="text-center mb-10">
+                <h1 class="text-4xl font-bold text-blue-600">Gewichtstracker</h1>
+                <p class="text-gray-600 mt-2">Houd eenvoudig je gewicht en doelen bij</p>
             </div>
-
-            <!-- Wachtwoord -->
-            <div>
-                <label for="password" class="block text-sm font-medium text-gray-700 mb-1">Wachtwoord</label>
-                <input type="password" id="password" name="password" required
-                    class="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+            
+            <div class="bg-white rounded-xl shadow-lg p-8">
+                <h2 class="text-2xl font-semibold text-gray-800 mb-6 text-center">Login</h2>
+                
+                {% if error %}
+                <div class="bg-red-50 border-l-4 border-red-500 p-4 mb-6">
+                    <div class="flex">
+                        <div class="flex-shrink-0">
+                            <svg class="h-5 w-5 text-red-500" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" />
+                            </svg>
+                        </div>
+                        <div class="ml-3">
+                            <p class="text-sm text-red-700">{{ error }}</p>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+                
+                <form method="post" class="space-y-6">
+                    <div>
+                        <label for="username" class="block text-sm font-medium text-gray-700">Gebruikersnaam</label>
+                        <input type="text" id="username" name="username" required 
+                               class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+                    </div>
+                    
+                    <div>
+                        <label for="password" class="block text-sm font-medium text-gray-700">Wachtwoord</label>
+                        <input type="password" id="password" name="password" required 
+                               class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+                    </div>
+                    
+                    <div>
+                        <button type="submit" class="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                            Login
+                        </button>
+                    </div>
+                </form>
+                
+                <div class="mt-6">
+                    <p class="text-center text-sm text-gray-500">
+                        Demo account: <span class="font-medium">test / password</span>
+                    </p>
+                </div>
             </div>
-
-            <!-- Inlogknop -->
-            <div>
-                <button type="submit"
-                    class="w-full bg-blue-500 hover:bg-blue-600 text-white font-medium py-2 px-4 rounded-md transition duration-300 ease-in-out">
-                    Inloggen
-                </button>
-            </div>
-        </form>
-
-        <!-- Footer -->
-        <div class="mt-8 text-center text-sm text-gray-500">
-            <p>Gemaakt door ReachMyWeight - Gewichtstracker App v1.0</p>
         </div>
     </div>
-
-    <script>
-        // Eenvoudige JavaScript om te controleren of de velden zijn ingevuld
-        const loginForm = document.querySelector('form');
-        loginForm.addEventListener('submit', function(event) {
-            const gebruikersnaam = document.getElementById('username').value;
-            const wachtwoord = document.getElementById('password').value;
-            
-            if (!gebruikersnaam || !wachtwoord) {
-                event.preventDefault();
-                alert('Vul alsjeblieft alle velden in!');
-            }
-        });
-    </script>
 </body>
 </html>

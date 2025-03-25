@@ -1,114 +1,233 @@
 <!DOCTYPE html>
-<html>
+<html lang="nl">
 <head>
-    <title>Gewicht Invoeren - ReachMyWeight</title>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css">
-    <link rel="stylesheet" href="/static/css/styles.css">
+    <title>Gewichtstracker - Nieuwe meting</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
 </head>
-<body>
-    <div class="container">
-        <header class="bg-primary text-white p-4 mb-4 rounded">
-            <div class="d-flex justify-content-between align-items-center">
-                <h1>ReachMyWeight</h1>
-                <div>
-                    <span class="me-3">Ingelogd als: {{ username }}</span>
-                    <a href="/login" class="btn btn-light btn-sm">Uitloggen</a>
+<body class="bg-gray-100 min-h-screen">
+    <div class="flex flex-col min-h-screen">
+        <!-- Header -->
+        <header class="bg-white shadow">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center">
+                <h1 class="text-2xl font-bold text-blue-600">Gewichtstracker</h1>
+                <div class="flex items-center space-x-4">
+                    <span class="text-gray-700">Hallo, <span class="font-medium">{{ username }}</span>!</span>
+                    <a href="/logout" class="px-3 py-1.5 bg-gray-200 hover:bg-gray-300 rounded text-gray-700 text-sm transition">Uitloggen</a>
                 </div>
             </div>
         </header>
-
-        <div class="row">
-            <div class="col-md-8 offset-md-2">
-                <div class="card">
-                    <div class="card-header bg-primary text-white">
-                        <h3 class="card-title mb-0">Gewicht en Doelgegevens Invoeren</h3>
+        
+        <!-- Main Content -->
+        <main class="flex-grow max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8">
+            <div class="flex flex-col md:flex-row gap-6">
+                <!-- Sidebar -->
+                <div class="w-full md:w-64 flex-shrink-0">
+                    <div class="bg-white rounded-lg shadow overflow-hidden">
+                        <nav class="divide-y divide-gray-200">
+                            <a href="/dashboard" class="block px-6 py-3 text-gray-700 hover:bg-gray-50 transition">Dashboard</a>
+                            <a href="/entry" class="block px-6 py-3 bg-blue-500 text-white font-medium">Nieuw gewicht invoeren</a>
+                        </nav>
                     </div>
-                    <div class="card-body">
-                        {% if error %}
-                        <div class="alert alert-danger">{{ error }}</div>
-                        {% endif %}
+                </div>
+                
+                <!-- Content -->
+                <div class="flex-1">
+                    <div class="bg-white rounded-lg shadow">
+                        <div class="px-6 py-4 border-b border-gray-200">
+                            <h2 class="text-xl font-semibold text-gray-800">Nieuwe gewichtsmeting toevoegen</h2>
+                        </div>
                         
-                        <form action="/entry" method="post">
-                            <div class="row mb-3">
-                                <div class="col-md-6">
-                                    <label for="weight" class="form-label">Huidig Gewicht (kg)</label>
-                                    <input type="number" step="0.1" class="form-control" id="weight" name="weight" required>
-                                </div>
-                                <div class="col-md-6">
-                                    <label for="goal_weight" class="form-label">Doel Gewicht (kg)</label>
-                                    <input type="number" step="0.1" class="form-control" id="goal_weight" name="goal_weight" required>
+                        <div class="p-6">
+                            {% if error %}
+                            <div class="bg-red-50 border-l-4 border-red-500 p-4 mb-6">
+                                <div class="flex">
+                                    <div class="flex-shrink-0">
+                                        <svg class="h-5 w-5 text-red-500" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                                            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" />
+                                        </svg>
+                                    </div>
+                                    <div class="ml-3">
+                                        <p class="text-sm text-red-700">{{ error }}</p>
+                                    </div>
                                 </div>
                             </div>
+                            {% endif %}
+                            
+                            <form method="post" id="entryForm">
+                                <!-- Weight Information -->
+                                <div class="space-y-6">
+                                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                                        <div>
+                                            <label for="weight" class="block text-sm font-medium text-gray-700">Huidig gewicht (kg)</label>
+                                            <input type="number" step="0.1" id="weight" name="weight" required
+                                                   class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+                                        </div>
+                                        
+                                        <div>
+                                            <label for="goal_weight" class="block text-sm font-medium text-gray-700">Doelgewicht (kg)</label>
+                                            <input type="number" step="0.1" id="goal_weight" name="goal_weight" required
+                                                   class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Personal Information -->
+                                    <div>
+                                        <h3 class="text-lg font-medium text-gray-900 border-b border-gray-200 pb-2 mb-4">Persoonlijke gegevens</h3>
+                                        
+                                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-6">
+                                            <div>
+                                                <label for="gender" class="block text-sm font-medium text-gray-700">Geslacht</label>
+                                                <select id="gender" name="gender" 
+                                                        class="mt-1 block w-full pl-3 pr-10 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+                                                    <option value="male" {% if gender == 'male' %}selected{% endif %}>Man</option>
+                                                    <option value="female" {% if gender == 'female' %}selected{% endif %}>Vrouw</option>
+                                                </select>
+                                            </div>
+                                            
+                                            <div>
+                                                <label for="height" class="block text-sm font-medium text-gray-700">Lengte (cm)</label>
+                                                <input type="number" id="height" name="height" value="{{ height }}" required
+                                                       class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+                                            </div>
+                                            
+                                            <div>
+                                                <label for="age" class="block text-sm font-medium text-gray-700">Leeftijd</label>
+                                                <input type="number" id="age" name="age" value="{{ age }}" required
+                                                       class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Activity Information -->
+                                    <div>
+                                        <h3 class="text-lg font-medium text-gray-900 border-b border-gray-200 pb-2 mb-4">Activiteitsniveau</h3>
+                                        
+                                        <div class="space-y-6">
+                                            <div>
+                                                <label for="activity_level" class="block text-sm font-medium text-gray-700">Dagelijks activiteitsniveau</label>
+                                                <select id="activity_level" name="activity_level" 
+                                                        class="mt-1 block w-full pl-3 pr-10 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+                                                    <option value="sedentary" {% if activity_level == 'sedentary' %}selected{% endif %}>Sedentair (weinig beweging)</option>
+                                                    <option value="light" {% if activity_level == 'light' %}selected{% endif %}>Licht actief (lichte beweging/sport 1-3 dagen per week)</option>
+                                                    <option value="moderate" {% if activity_level == 'moderate' %}selected{% endif %}>Matig actief (matige beweging/sport 3-5 dagen per week)</option>
+                                                    <option value="active" {% if activity_level == 'active' %}selected{% endif %}>Zeer actief (zware beweging/sport 6-7 dagen per week)</option>
+                                                    <option value="very active" {% if activity_level == 'very active' %}selected{% endif %}>Extreem actief (zeer zware beweging/sport/fysiek werk)</option>
+                                                </select>
+                                            </div>
+                                            
+                                            <!-- Sport Selection with required two selections -->
+                                            <div>
+                                                <label class="block text-sm font-medium text-gray-700 mb-2">Sport activiteiten <span class="text-red-600">*</span></label>
+                                                <p class="text-sm text-gray-500 mb-3">Selecteer minimaal 2 sportactiviteiten</p>
+                                                <div class="grid grid-cols-2 sm:grid-cols-3 gap-3" id="sportOptions">
+                                                    <label class="inline-flex items-center p-3 rounded border border-gray-200 bg-white hover:bg-gray-50 cursor-pointer">
+                                                        <input type="checkbox" name="sport" value="Football" class="h-4 w-4 text-blue-600 rounded sport-checkbox">
+                                                        <span class="ml-2 text-sm">Voetbal</span>
+                                                    </label>
+                                                    <label class="inline-flex items-center p-3 rounded border border-gray-200 bg-white hover:bg-gray-50 cursor-pointer">
+                                                        <input type="checkbox" name="sport" value="Basketball" class="h-4 w-4 text-blue-600 rounded sport-checkbox">
+                                                        <span class="ml-2 text-sm">Basketbal</span>
+                                                    </label>
+                                                    <label class="inline-flex items-center p-3 rounded border border-gray-200 bg-white hover:bg-gray-50 cursor-pointer">
+                                                        <input type="checkbox" name="sport" value="Tennis" class="h-4 w-4 text-blue-600 rounded sport-checkbox">
+                                                        <span class="ml-2 text-sm">Tennis</span>
+                                                    </label>
+                                                    <label class="inline-flex items-center p-3 rounded border border-gray-200 bg-white hover:bg-gray-50 cursor-pointer">
+                                                        <input type="checkbox" name="sport" value="Swimming" class="h-4 w-4 text-blue-600 rounded sport-checkbox" checked>
+                                                        <span class="ml-2 text-sm">Zwemmen</span>
+                                                    </label>
+                                                    <label class="inline-flex items-center p-3 rounded border border-gray-200 bg-white hover:bg-gray-50 cursor-pointer">
+                                                        <input type="checkbox" name="sport" value="Golf" class="h-4 w-4 text-blue-600 rounded sport-checkbox">
+                                                        <span class="ml-2 text-sm">Golf</span>
+                                                    </label>
+                                                </div>
+                                                <div id="sportError" class="hidden mt-2 text-sm text-red-600">
+                                                    Selecteer a.u.b. minimaal 2 sportactiviteiten
+                                                </div>
+                                            </div>
+                                            
+                                            <div>
+                                                <label for="aantal_minuten_sporten" class="block text-sm font-medium text-gray-700">Aantal minuten sporten per dag</label>
+                                                <input type="number" id="aantal_minuten_sporten" name="aantal_minuten_sporten" value="30" min="1"
+                                                       class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+                                            </div>
 
-                            <div class="row mb-3">
-                                <div class="col-md-6">
-                                    <label for="gender" class="form-label">Geslacht</label>
-                                    <select class="form-select" id="gender" name="gender">
-                                        <option value="male" {% if gender == 'male' %}selected{% endif %}>Man</option>
-                                        <option value="female" {% if gender == 'female' %}selected{% endif %}>Vrouw</option>
-                                    </select>
+                                            <!-- Hidden field for deficit_surplus, we'll use all three values in calculation -->
+                                            <input type="hidden" id="deficit_surplus" name="deficit_surplus" value="500">
+                                        </div>
+                                    </div>
+                                    
+                                    <div>
+                                        <button type="submit" id="submitButton" class="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                                            Berekenen en opslaan
+                                        </button>
+                                    </div>
                                 </div>
-                                <div class="col-md-6">
-                                    <label for="height" class="form-label">Lengte (cm)</label>
-                                    <input type="number" class="form-control" id="height" name="height" value="{{ height }}">
-                                </div>
-                            </div>
-
-                            <div class="row mb-3">
-                                <div class="col-md-6">
-                                    <label for="age" class="form-label">Leeftijd</label>
-                                    <input type="number" class="form-control" id="age" name="age" value="{{ age }}">
-                                </div>
-                                <div class="col-md-6">
-                                    <label for="activity_level" class="form-label">Activiteitsniveau</label>
-                                    <select class="form-select" id="activity_level" name="activity_level">
-                                        <option value="sedentary" {% if activity_level == 'sedentary' %}selected{% endif %}>Sedentair</option>
-                                        <option value="light" {% if activity_level == 'light' %}selected{% endif %}>Licht Actief</option>
-                                        <option value="moderate" {% if activity_level == 'moderate' %}selected{% endif %}>Gemiddeld Actief</option>
-                                        <option value="active" {% if activity_level == 'active' %}selected{% endif %}>Zeer Actief</option>
-                                        <option value="very_active" {% if activity_level == 'very_active' %}selected{% endif %}>Extreem Actief</option>
-                                    </select>
-                                </div>
-                            </div>
-
-                            <div class="row mb-3">
-                                <div class="col-md-6">
-                                    <label for="sport" class="form-label">Sport (optioneel)</label>
-                                    <select multiple class="form-select" id="sport" name="sport">
-                                        <option value="Running">Hardlopen</option>
-                                        <option value="Swimming">Zwemmen</option>
-                                        <option value="Cycling">Fietsen</option>
-                                        <option value="Football">Voetbal</option>
-                                        <option value="Basketball">Basketbal</option>
-                                        <option value="Tennis">Tennis</option>
-                                        <option value="Hiking">Wandelen</option>
-                                    </select>
-                                </div>
-                                <div class="col-md-6">
-                                    <label for="aantal_minuten_sporten" class="form-label">Minuten Sport per Week</label>
-                                    <input type="number" class="form-control" id="aantal_minuten_sporten" name="aantal_minuten_sporten" value="0">
-                                </div>
-                            </div>
-
-                            <div class="mb-3">
-                                <label for="deficit_surplus" class="form-label">Calorisch Tekort/Overschot per Dag</label>
-                                <input type="number" class="form-control" id="deficit_surplus" name="deficit_surplus" value="500">
-                                <div class="form-text">Positief voor gewichtsverlies, negatief voor aankomen.</div>
-                            </div>
-
-                            <div class="d-flex justify-content-between">
-                                <a href="/dashboard" class="btn btn-secondary">Terug naar Dashboard</a>
-                                <button type="submit" class="btn btn-primary">Opslaan</button>
-                            </div>
-                        </form>
+                            </form>
+                        </div>
                     </div>
                 </div>
             </div>
-        </div>
+        </main>
+        
+        <!-- Footer -->
+        <footer class="bg-white mt-auto">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+                <p class="text-center text-sm text-gray-500">Gewichtstracker &copy; 2025</p>
+            </div>
+        </footer>
     </div>
-
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <script>
+        // Script to validate that at least two sports are selected
+        document.addEventListener('DOMContentLoaded', function() {
+            const form = document.getElementById('entryForm');
+            const sportCheckboxes = document.querySelectorAll('.sport-checkbox');
+            const sportError = document.getElementById('sportError');
+            const sportOptions = document.getElementById('sportOptions');
+            
+            form.addEventListener('submit', function(event) {
+                // Count selected sports
+                let selectedSports = 0;
+                sportCheckboxes.forEach(checkbox => {
+                    if (checkbox.checked) {
+                        selectedSports++;
+                    }
+                });
+                
+                // Validate we have at least 2 sports selected
+                if (selectedSports < 2) {
+                    event.preventDefault();
+                    sportError.classList.remove('hidden');
+                    sportOptions.classList.add('border', 'border-red-300', 'rounded-md', 'p-2');
+                    
+                    // Scroll to the sport options
+                    sportOptions.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                } else {
+                    sportError.classList.add('hidden');
+                    sportOptions.classList.remove('border', 'border-red-300', 'rounded-md', 'p-2');
+                }
+            });
+            
+            // Hide error when user selects more sports
+            sportCheckboxes.forEach(checkbox => {
+                checkbox.addEventListener('change', function() {
+                    let selectedSports = 0;
+                    sportCheckboxes.forEach(cb => {
+                        if (cb.checked) {
+                            selectedSports++;
+                        }
+                    });
+                    
+                    if (selectedSports >= 2) {
+                        sportError.classList.add('hidden');
+                        sportOptions.classList.remove('border', 'border-red-300', 'rounded-md', 'p-2');
+                    }
+                });
+            });
+        });
+    </script>
 </body>
-</html> 
+</html>

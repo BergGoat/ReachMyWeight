@@ -3,211 +3,303 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard - ReachMyWeight</title>
-    <!-- Tailwind CSS via CDN -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Chart.js voor het grafiekje -->
+    <title>Gewichtstracker - Dashboard</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
-<body class="bg-gray-50 min-h-screen">
-    <!-- Navigatiebalk -->
-    <nav class="bg-white shadow-md">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="flex justify-between h-16">
-                <div class="flex items-center">
-                    <h1 class="text-xl font-bold text-gray-800">ReachMy<span class="text-blue-500">Weight</span></h1>
-                </div>
-                <div class="flex items-center">
-                    <span class="mr-4 text-gray-600">Welkom, {{ username }}!</span>
-                    <a href="/logout" class="bg-gray-200 hover:bg-gray-300 text-gray-700 px-3 py-2 rounded-md text-sm font-medium transition duration-300">
-                        Uitloggen
-                    </a>
+<body class="bg-gray-100 min-h-screen">
+    <div class="flex flex-col min-h-screen">
+        <!-- Header -->
+        <header class="bg-white shadow">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center">
+                <h1 class="text-2xl font-bold text-blue-600">Gewichtstracker</h1>
+                <div class="flex items-center space-x-4">
+                    <span class="text-gray-700">Hallo, <span class="font-medium">{{ username }}</span>!</span>
+                    <a href="/logout" class="px-3 py-1.5 bg-gray-200 hover:bg-gray-300 rounded text-gray-700 text-sm transition">Uitloggen</a>
                 </div>
             </div>
-        </div>
-    </nav>
-
-    <!-- Hoofdinhoud -->
-    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <!-- Gewicht Toevoegen Kaart -->
-            <div class="bg-white rounded-lg shadow-md overflow-hidden">
-                <div class="px-6 py-4 bg-blue-500 text-white">
-                    <h2 class="text-xl font-semibold">Gewicht Invoeren</h2>
-                </div>
-                <div class="p-6">
-                    <form method="post" action="/add-weight" class="space-y-4">
-                        <div>
-                            <label for="weight" class="block text-sm font-medium text-gray-700 mb-1">Huidig Gewicht (kg)</label>
-                            <input type="number" step="0.1" id="weight" name="weight" required
-                                class="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
-                        </div>
-                        <div>
-                            <label for="goal_weight" class="block text-sm font-medium text-gray-700 mb-1">Doel Gewicht (kg)</label>
-                            <input type="number" step="0.1" id="goal_weight" name="goal_weight" required
-                                class="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
-                        </div>
-                        <button type="submit"
-                            class="w-full bg-blue-500 hover:bg-blue-600 text-white font-medium py-2 px-4 rounded-md transition duration-300">
-                            Opslaan
-                        </button>
-                    </form>
-                </div>
-            </div>
-
-            <!-- Resultaat Kaart -->
-            <div class="bg-white rounded-lg shadow-md overflow-hidden">
-                <div class="px-6 py-4 bg-green-500 text-white">
-                    <h2 class="text-xl font-semibold">Algoritme Resultaat</h2>
-                </div>
-                <div class="p-6">
-                    {% if result %}
-                    <div class="mb-6">
-                        <h3 class="text-lg font-medium text-gray-800 mb-2">Berekening Voltooid</h3>
-                        <div class="bg-green-50 p-4 rounded-md border border-green-200">
-                            <p class="text-gray-700">Tijd nodig om je doel te bereiken:</p>
-                            <p class="text-3xl font-bold text-green-600 mt-2">{{ result.days }} dagen</p>
-                            <p class="text-sm text-gray-500 mt-1">Berekend met O(n²) algoritme</p>
-                        </div>
+        </header>
+        
+        <!-- Main Content -->
+        <main class="flex-grow max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8">
+            <div class="flex flex-col md:flex-row gap-6">
+                <!-- Sidebar -->
+                <div class="w-full md:w-64 flex-shrink-0">
+                    <div class="bg-white rounded-lg shadow overflow-hidden">
+                        <nav class="divide-y divide-gray-200">
+                            <a href="/dashboard" class="block px-6 py-3 bg-blue-500 text-white font-medium">Dashboard</a>
+                            <a href="/entry" class="block px-6 py-3 text-gray-700 hover:bg-gray-50 transition">Nieuw gewicht invoeren</a>
+                        </nav>
                     </div>
-                    {% else %}
-                    <div class="flex items-center justify-center h-48">
-                        <p class="text-gray-500">Voer je gewicht in om een berekening te starten</p>
+                </div>
+                
+                <!-- Content -->
+                <div class="flex-1 space-y-6">
+                    {% if calculation_results %}
+                    <div class="bg-white rounded-lg shadow overflow-hidden">
+                        <div class="px-6 py-4 border-b border-gray-200">
+                            <h2 class="text-xl font-semibold text-gray-800 mb-2">Tijd tot doelgewicht bereikt is</h2>
+                            <p class="text-sm text-gray-600">Hier zie je hoeveel tijd het kost om van {{ calculation_results.current_weight }}kg naar {{ calculation_results.goal_weight }}kg te gaan</p>
+                        </div>
+                        
+                        <div class="p-6">
+                            <!-- Calorie deficit option comparison -->
+                            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                                <!-- Light deficit option -->
+                                <div class="border border-gray-200 rounded-lg overflow-hidden">
+                                    <div class="bg-blue-50 px-4 py-3 border-b border-gray-200">
+                                        <h3 class="text-md font-medium text-gray-900">Licht tempo</h3>
+                                        <p class="text-xs text-gray-500">250 kcal per dag</p>
+                                    </div>
+                                    <div class="p-4">
+                                        <div class="text-center mb-4">
+                                            <div class="text-3xl font-bold text-blue-600">{{ light_option.days|round(1) }}</div>
+                                            <div class="text-sm text-gray-500">dagen</div>
+                                        </div>
+                                        <div class="flex justify-between text-sm border-t border-gray-100 pt-3">
+                                            <span class="text-gray-500">{{ (light_option.days / 7)|round(1) }} weken</span>
+                                            <span class="text-gray-500">{{ (light_option.days / 30)|round(1) }} maanden</span>
+                                        </div>
+                                    </div>
+                                    <div class="px-4 py-3 bg-gray-50 border-t border-gray-200">
+                                        <button class="text-xs text-blue-600 font-medium focus:outline-none hover:underline" 
+                                                onclick="toggleDetails('light-details')">Details tonen</button>
+                                        <div id="light-details" class="hidden mt-2 text-xs text-gray-600">
+                                            <div class="flex justify-between mb-1">
+                                                <span>TDEE:</span>
+                                                <span>{{ light_option.tdee|round }} kcal</span>
+                                            </div>
+                                            <div class="flex justify-between mb-1">
+                                                <span>Dagelijkse calorie-inname:</span>
+                                                <span>{{ (light_option.tdee - 250)|round }} kcal</span>
+                                            </div>
+                                            <div class="flex justify-between">
+                                                <span>Totaal te verliezen:</span>
+                                                <span>{{ calculation_results.weight_difference }} kg</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Standard deficit option -->
+                                <div class="border-2 border-blue-500 rounded-lg overflow-hidden shadow-md">
+                                    <div class="bg-blue-100 px-4 py-3 border-b border-blue-200 relative">
+                                        <div class="absolute top-0 right-0 bg-blue-500 text-white text-xs px-2 py-1 rounded-bl">
+                                            Aanbevolen
+                                        </div>
+                                        <h3 class="text-md font-medium text-gray-900">Normaal tempo</h3>
+                                        <p class="text-xs text-gray-500">500 kcal per dag</p>
+                                    </div>
+                                    <div class="p-4">
+                                        <div class="text-center mb-4">
+                                            <div class="text-3xl font-bold text-blue-600">{{ standard_option.days|round(1) }}</div>
+                                            <div class="text-sm text-gray-500">dagen</div>
+                                        </div>
+                                        <div class="flex justify-between text-sm border-t border-gray-100 pt-3">
+                                            <span class="text-gray-500">{{ (standard_option.days / 7)|round(1) }} weken</span>
+                                            <span class="text-gray-500">{{ (standard_option.days / 30)|round(1) }} maanden</span>
+                                        </div>
+                                    </div>
+                                    <div class="px-4 py-3 bg-gray-50 border-t border-gray-200">
+                                        <button class="text-xs text-blue-600 font-medium focus:outline-none hover:underline" 
+                                                onclick="toggleDetails('standard-details')">Details tonen</button>
+                                        <div id="standard-details" class="hidden mt-2 text-xs text-gray-600">
+                                            <div class="flex justify-between mb-1">
+                                                <span>TDEE:</span>
+                                                <span>{{ standard_option.tdee|round }} kcal</span>
+                                            </div>
+                                            <div class="flex justify-between mb-1">
+                                                <span>Dagelijkse calorie-inname:</span>
+                                                <span>{{ (standard_option.tdee - 500)|round }} kcal</span>
+                                            </div>
+                                            <div class="flex justify-between">
+                                                <span>Totaal te verliezen:</span>
+                                                <span>{{ calculation_results.weight_difference }} kg</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Intensive deficit option -->
+                                <div class="border border-gray-200 rounded-lg overflow-hidden">
+                                    <div class="bg-blue-50 px-4 py-3 border-b border-gray-200">
+                                        <h3 class="text-md font-medium text-gray-900">Intensief tempo</h3>
+                                        <p class="text-xs text-gray-500">1000 kcal per dag</p>
+                                    </div>
+                                    <div class="p-4">
+                                        <div class="text-center mb-4">
+                                            <div class="text-3xl font-bold text-blue-600">{{ intensive_option.days|round(1) }}</div>
+                                            <div class="text-sm text-gray-500">dagen</div>
+                                        </div>
+                                        <div class="flex justify-between text-sm border-t border-gray-100 pt-3">
+                                            <span class="text-gray-500">{{ (intensive_option.days / 7)|round(1) }} weken</span>
+                                            <span class="text-gray-500">{{ (intensive_option.days / 30)|round(1) }} maanden</span>
+                                        </div>
+                                    </div>
+                                    <div class="px-4 py-3 bg-gray-50 border-t border-gray-200">
+                                        <button class="text-xs text-blue-600 font-medium focus:outline-none hover:underline" 
+                                                onclick="toggleDetails('intensive-details')">Details tonen</button>
+                                        <div id="intensive-details" class="hidden mt-2 text-xs text-gray-600">
+                                            <div class="flex justify-between mb-1">
+                                                <span>TDEE:</span>
+                                                <span>{{ intensive_option.tdee|round }} kcal</span>
+                                            </div>
+                                            <div class="flex justify-between mb-1">
+                                                <span>Dagelijkse calorie-inname:</span>
+                                                <span>{{ (intensive_option.tdee - 1000)|round }} kcal</span>
+                                            </div>
+                                            <div class="flex justify-between">
+                                                <span>Totaal te verliezen:</span>
+                                                <span>{{ calculation_results.weight_difference }} kg</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Sport specific results -->
+                            <div class="mt-8">
+                                <h3 class="text-lg font-medium text-gray-800 mb-3">Details per sport</h3>
+                                <div class="bg-white shadow overflow-hidden border border-gray-200 sm:rounded-lg">
+                                    <table class="min-w-full divide-y divide-gray-200">
+                                        <thead class="bg-gray-50">
+                                            <tr>
+                                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                    Sport
+                                                </th>
+                                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                    Calorieën/dag
+                                                </th>
+                                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                    Tijd tot doel
+                                                </th>
+                                            </tr>
+                                        </thead>
+                                        <tbody class="bg-white divide-y divide-gray-200">
+                                            {% for result in detailed_results %}
+                                            <tr>
+                                                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                                                    {{ result.sport }}
+                                                </td>
+                                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                                    {{ result.calorie_adjustment }} kcal
+                                                </td>
+                                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                                    {{ result.time_to_reach_goal|round(1) }} dagen
+                                                </td>
+                                            </tr>
+                                            {% endfor %}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                     {% endif %}
                     
-                    <!-- Kleine uitleg over het algoritme -->
-                    <div class="mt-4 bg-blue-50 p-4 rounded-md border border-blue-100">
-                        <h4 class="font-medium text-blue-800 mb-1">Over ons algoritme</h4>
-                        <p class="text-sm text-gray-600">
-                            Ons O(n²) algoritme berekent de optimale tijd om je doel te bereiken op basis van je huidige gewicht en streefgewicht.
-                        </p>
+                    <div class="bg-white rounded-lg shadow">
+                        <div class="px-6 py-4 border-b border-gray-200">
+                            <h2 class="text-xl font-semibold text-gray-800">Gewicht metingen</h2>
+                        </div>
+                        
+                        {% if entries and entries|length > 0 %}
+                        <div class="p-6">
+                            <div class="h-64 mb-6">
+                                <canvas id="weightChart"></canvas>
+                            </div>
+                            
+                            <div class="overflow-x-auto">
+                                <table class="min-w-full divide-y divide-gray-200">
+                                    <thead>
+                                        <tr>
+                                            <th class="px-6 py-3 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Datum</th>
+                                            <th class="px-6 py-3 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Gewicht (kg)</th>
+                                            <th class="px-6 py-3 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Doel (kg)</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody class="bg-white divide-y divide-gray-200">
+                                        {% for entry in entries %}
+                                        <tr>
+                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ entry.date }}</td>
+                                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{{ entry.weight }}</td>
+                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ entry.goal_weight }}</td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                        <script>
+                            document.addEventListener('DOMContentLoaded', function() {
+                                const ctx = document.getElementById('weightChart').getContext('2d');
+                                
+                                // Extract data from entries
+                                const dates = [{% for entry in entries %}'{{ entry.date }}'{% if not loop.last %}, {% endif %}{% endfor %}];
+                                const weights = [{% for entry in entries %}{{ entry.weight }}{% if not loop.last %}, {% endif %}{% endfor %}];
+                                const goals = [{% for entry in entries %}{{ entry.goal_weight }}{% if not loop.last %}, {% endif %}{% endfor %}];
+                                
+                                // Create chart
+                                const chart = new Chart(ctx, {
+                                    type: 'line',
+                                    data: {
+                                        labels: dates.reverse(),
+                                        datasets: [
+                                            {
+                                                label: 'Gewicht (kg)',
+                                                data: weights.slice().reverse(),
+                                                borderColor: '#3b82f6',
+                                                backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                                                tension: 0.4,
+                                                fill: true
+                                            },
+                                            {
+                                                label: 'Doel (kg)',
+                                                data: goals.slice().reverse(),
+                                                borderColor: '#f59e0b',
+                                                backgroundColor: 'transparent',
+                                                borderDash: [5, 5],
+                                                tension: 0
+                                            }
+                                        ]
+                                    },
+                                    options: {
+                                        responsive: true,
+                                        maintainAspectRatio: false,
+                                        scales: {
+                                            y: {
+                                                beginAtZero: false
+                                            }
+                                        }
+                                    }
+                                });
+                            });
+                            
+                            // Function to toggle details sections
+                            function toggleDetails(id) {
+                                const detailsElement = document.getElementById(id);
+                                if (detailsElement.classList.contains('hidden')) {
+                                    detailsElement.classList.remove('hidden');
+                                } else {
+                                    detailsElement.classList.add('hidden');
+                                }
+                            }
+                        </script>
+                        {% else %}
+                        <div class="p-6 text-center">
+                            <p class="text-gray-500">Nog geen gegevens beschikbaar. <a href="/entry" class="text-blue-500 hover:underline">Voer uw eerste meting in</a>.</p>
+                        </div>
+                        {% endif %}
                     </div>
                 </div>
             </div>
-        </div>
-
-        <!-- Gewichtsverloop Grafiek -->
-        <div class="mt-6 bg-white rounded-lg shadow-md overflow-hidden">
-            <div class="px-6 py-4 bg-purple-500 text-white">
-                <h2 class="text-xl font-semibold">Gewichtsverloop</h2>
+        </main>
+        
+        <!-- Footer -->
+        <footer class="bg-white mt-auto">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+                <p class="text-center text-sm text-gray-500">Gewichtstracker &copy; 2025</p>
             </div>
-            <div class="p-6">
-                <canvas id="gewichtsGrafiek" height="300"></canvas>
-            </div>
-            <div>
-                <a href="/entry" class="btn btn-primary btn-sm">Gewicht Invoeren</a>
-            </div>
-        </div>
-
-        <!-- Gewichtsgeschiedenis Tabel -->
-        <div class="mt-6 bg-white rounded-lg shadow-md overflow-hidden">
-            <div class="px-6 py-4 bg-gray-700 text-white">
-                <h2 class="text-xl font-semibold">Geschiedenis</h2>
-            </div>
-            <div class="overflow-x-auto">
-                <table class="min-w-full divide-y divide-gray-200">
-                    <thead class="bg-gray-50">
-                        <tr>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Datum</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Gewicht (kg)</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Doel (kg)</th>
-                        </tr>
-                    </thead>
-                    <tbody class="bg-white divide-y divide-gray-200">
-                        {% for entry in entries %}
-                        <tr>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ entry.date }}</td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{{ entry.weight }}</td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ entry.goal_weight }}</td>
-                        </tr>
-                        {% endfor %}
-                        
-                        {% if not entries %}
-                        <tr>
-                            <td colspan="3" class="px-6 py-4 text-center text-sm text-gray-500">Geen gegevens beschikbaar</td>
-                        </tr>
-                        {% endif %}
-                    </tbody>
-                </table>
-            </div>
-        </div>
-    </main>
-
-    <script>
-        // Functie om de grafiek te tekenen
-        function tekenGewichtsGrafiek() {
-            // Verzamel gegevens uit de tabel
-            const tabelRijen = document.querySelectorAll('tbody tr');
-            const datums = [];
-            const gewichten = [];
-            const doelen = [];
-            
-            // Als er geen gegevens zijn, voeg wat voorbeeldgegevens toe
-            if (tabelRijen.length === 0 || tabelRijen[0].cells.length < 3) {
-                // Voorbeeldgegevens voor nieuwe gebruikers
-                datums.push('Vandaag', '1 dag geleden', '2 dagen geleden', '3 dagen geleden', '4 dagen geleden');
-                gewichten.push(80, 80.5, 81, 81.3, 81.8);
-                doelen.push(75, 75, 75, 75, 75);
-            } else {
-                // Gegevens uit de tabel halen (maximaal 7 meest recente metingen)
-                const maxEntries = Math.min(tabelRijen.length, 7);
-                for (let i = 0; i < maxEntries; i++) {
-                    const rij = tabelRijen[i];
-                    datums.unshift(rij.cells[0].textContent);
-                    gewichten.unshift(parseFloat(rij.cells[1].textContent));
-                    doelen.unshift(parseFloat(rij.cells[2].textContent));
-                }
-            }
-
-            // De grafiek maken met Chart.js
-            const ctx = document.getElementById('gewichtsGrafiek').getContext('2d');
-            new Chart(ctx, {
-                type: 'line',
-                data: {
-                    labels: datums,
-                    datasets: [
-                        {
-                            label: 'Gewicht',
-                            data: gewichten,
-                            backgroundColor: 'rgba(59, 130, 246, 0.2)',
-                            borderColor: 'rgba(59, 130, 246, 1)',
-                            borderWidth: 2,
-                            tension: 0.3
-                        },
-                        {
-                            label: 'Doel',
-                            data: doelen,
-                            backgroundColor: 'rgba(16, 185, 129, 0.2)',
-                            borderColor: 'rgba(16, 185, 129, 1)',
-                            borderWidth: 2,
-                            borderDash: [5, 5],
-                            tension: 0
-                        }
-                    ]
-                },
-                options: {
-                    responsive: true,
-                    plugins: {
-                        legend: {
-                            position: 'top',
-                        },
-                        tooltip: {
-                            mode: 'index',
-                            intersect: false
-                        }
-                    },
-                    scales: {
-                        y: {
-                            beginAtZero: false
-                        }
-                    }
-                }
-            });
-        }
-
-        // Wacht tot de pagina is geladen en teken dan de grafiek
-        document.addEventListener('DOMContentLoaded', tekenGewichtsGrafiek);
-    </script>
+        </footer>
+    </div>
 </body>
 </html>

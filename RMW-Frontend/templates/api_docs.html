@@ -3,198 +3,415 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>API Documentatie - ReachMyWeight</title>
-    <!-- Tailwind CSS via CDN -->
-    <script src="https://cdn.tailwindcss.com"></script>
+    <title>Gewichtstracker - API Documentatie</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.25.0/themes/prism.min.css" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.25.0/prism.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.25.0/components/prism-json.min.js"></script>
 </head>
 <body class="bg-gray-50 min-h-screen">
-    <!-- Navigatiebalk -->
-    <nav class="bg-white shadow-md">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="flex justify-between h-16">
-                <div class="flex items-center">
-                    <h1 class="text-xl font-bold text-gray-800">ReachMy<span class="text-blue-500">Weight</span> API</h1>
-                </div>
-                <div class="flex items-center">
-                    <a href="/dashboard" class="bg-blue-100 hover:bg-blue-200 text-blue-700 px-3 py-2 rounded-md text-sm font-medium transition duration-300 mr-4">
-                        Dashboard
-                    </a>
-                    <a href="/logout" class="bg-gray-200 hover:bg-gray-300 text-gray-700 px-3 py-2 rounded-md text-sm font-medium transition duration-300">
-                        Uitloggen
-                    </a>
-                </div>
-            </div>
-        </div>
-    </nav>
-
-    <!-- Hoofdinhoud -->
-    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-        <div class="bg-white rounded-lg shadow-md overflow-hidden mb-6">
-            <div class="px-6 py-4 bg-blue-500 text-white">
-                <h2 class="text-xl font-semibold">API Documentatie</h2>
-            </div>
-            <div class="p-6">
-                <p class="mb-4">
-                    De Gewichtstracker API stelt je in staat om gewichtsgegevens programmatisch te beheren en berekeningen uit te voeren.
-                    Alle endpoints retourneren data in JSON formaat.
-                </p>
-                
-                <h3 class="text-lg font-medium text-gray-800 mt-6 mb-2">Basis URL</h3>
-                <div class="bg-gray-100 p-3 rounded-md font-mono text-sm mb-4">
-                    http://localhost:8002/api
-                </div>
-                
-                <h3 class="text-lg font-medium text-gray-800 mt-6 mb-2">Authenticatie</h3>
-                <p class="mb-4">
-                    Deze demo-versie van de API heeft geen authenticatie. In een productieomgeving zou 
-                    je een API key of OAuth token moeten gebruiken.
-                </p>
-                
-                <h3 class="text-lg font-medium text-gray-800 mt-6 mb-2">Beschikbare Endpoints</h3>
-                
-                <!-- Endpoint 1 -->
-                <div class="border rounded-md mb-4">
-                    <div class="p-3 bg-green-100 border-b flex items-center">
-                        <span class="bg-green-500 text-white font-bold px-2 py-1 rounded text-xs mr-3">GET</span>
-                        <span class="font-mono">/api/weights/{user_id}</span>
+    <div class="flex flex-col min-h-screen">
+        <!-- Header -->
+        <header class="bg-white shadow-sm">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+                <div class="flex justify-between items-center">
+                    <h1 class="text-2xl font-bold text-blue-600">Gewichtstracker</h1>
+                    <div>
+                        <a href="/" class="px-3 py-1.5 bg-blue-100 hover:bg-blue-200 rounded text-blue-700 text-sm transition">Terug naar App</a>
                     </div>
-                    <div class="p-4">
-                        <h4 class="font-medium mb-2">Haal gewichtsmetingen op</h4>
-                        <p class="text-sm text-gray-600 mb-3">
-                            Haalt alle gewichtsmetingen op voor een specifieke gebruiker, gesorteerd op datum (nieuwste eerst).
+                </div>
+            </div>
+        </header>
+        
+        <!-- Main Content -->
+        <main class="flex-grow max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8">
+            <div class="bg-white shadow rounded-lg overflow-hidden">
+                <div class="px-6 py-4 border-b border-gray-200 bg-blue-50">
+                    <h2 class="text-xl font-bold text-gray-900">API Documentatie</h2>
+                    <p class="mt-1 text-gray-600">Volledige documentatie van de Gewichtstracker API</p>
+                </div>
+                
+                <div class="p-6">
+                    <div class="prose max-w-none">
+                        <h3 class="text-lg font-medium text-gray-900">Introductie</h3>
+                        <p class="text-gray-600">
+                            De Gewichtstracker API biedt toegang tot alle functionaliteiten van de Gewichtstracker applicatie.
+                            Met deze API kunt u gewichtsgegevens ophalen en toevoegen, berekeningen uitvoeren en gebruikers beheren.
                         </p>
                         
-                        <h5 class="font-medium text-sm text-gray-700 mb-1">Parameters:</h5>
-                        <ul class="text-sm text-gray-600 list-disc list-inside mb-3">
-                            <li><span class="font-mono text-xs">user_id</span> (pad parameter) - De ID van de gebruiker</li>
-                        </ul>
+                        <h3 class="text-lg font-medium text-gray-900 mt-8">Basis URL</h3>
+                        <div class="bg-gray-100 p-4 rounded-md">
+                            <code class="text-sm">http://localhost:8000</code>
+                        </div>
                         
-                        <h5 class="font-medium text-sm text-gray-700 mb-1">Voorbeeld respons:</h5>
-                        <pre class="bg-gray-100 p-2 rounded-md text-xs overflow-auto mb-3">
-[
+                        <h3 class="text-lg font-medium text-gray-900 mt-8">Authenticatie</h3>
+                        <p class="text-gray-600">
+                            Authenticatie verloopt via het <code>/api/login</code> endpoint. Na succesvolle authenticatie ontvangt u een gebruikers-ID dat u kunt gebruiken voor verdere API-verzoeken.
+                        </p>
+                        
+                        <div class="mt-4">
+                            <div class="flex bg-blue-50 p-2 rounded-t-md border border-blue-200">
+                                <span class="px-2 py-1 bg-blue-500 text-white text-xs font-medium rounded mr-2">POST</span>
+                                <code class="text-sm">/api/login</code>
+                            </div>
+                            <div class="bg-gray-50 border border-gray-200 border-t-0 rounded-b-md">
+                                <div class="p-4 border-b border-gray-200">
+                                    <h4 class="text-sm font-medium text-gray-700">Request Body:</h4>
+                                    <pre class="language-json mt-2 text-sm"><code>{
+  "username": "test",
+  "password": "password"
+}</code></pre>
+                                </div>
+                                <div class="p-4">
+                                    <h4 class="text-sm font-medium text-gray-700">Response:</h4>
+                                    <pre class="language-json mt-2 text-sm"><code>{
+  "id": 1,
+  "username": "test"
+}</code></pre>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Weight Endpoints -->
+                        <h3 class="text-lg font-medium text-gray-900 mt-12">Gewicht Endpoints</h3>
+                        
+                        <!-- Get Weights -->
+                        <div class="mt-4">
+                            <div class="flex bg-green-50 p-2 rounded-t-md border border-green-200">
+                                <span class="px-2 py-1 bg-green-500 text-white text-xs font-medium rounded mr-2">GET</span>
+                                <code class="text-sm">/api/weights/{user_id}</code>
+                            </div>
+                            <div class="bg-gray-50 border border-gray-200 border-t-0 rounded-b-md">
+                                <div class="p-4 border-b border-gray-200">
+                                    <h4 class="text-sm font-medium text-gray-700">Path Parameters:</h4>
+                                    <table class="mt-2 min-w-full divide-y divide-gray-200 text-sm">
+                                        <thead>
+                                            <tr>
+                                                <th class="px-4 py-2 text-left font-medium text-gray-500">Parameter</th>
+                                                <th class="px-4 py-2 text-left font-medium text-gray-500">Type</th>
+                                                <th class="px-4 py-2 text-left font-medium text-gray-500">Beschrijving</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <tr>
+                                                <td class="px-4 py-2 text-gray-700">user_id</td>
+                                                <td class="px-4 py-2 text-gray-700">integer</td>
+                                                <td class="px-4 py-2 text-gray-700">ID van de gebruiker</td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                                <div class="p-4">
+                                    <h4 class="text-sm font-medium text-gray-700">Response:</h4>
+                                    <pre class="language-json mt-2 text-sm"><code>[
   {
     "id": 1,
     "user_id": 1,
-    "weight": 80.5,
-    "goal_weight": 75.0,
-    "date": "2025-03-22"
+    "weight": 75.5,
+    "goal_weight": 70.0,
+    "date": "2025-03-25 12:30:45"
   },
   {
     "id": 2,
     "user_id": 1,
-    "weight": 80.2,
-    "goal_weight": 75.0,
-    "date": "2025-03-21"
+    "weight": 74.8,
+    "goal_weight": 70.0,
+    "date": "2025-03-26 08:15:22"
   }
-]</pre>
-                    </div>
-                </div>
-                
-                <!-- Endpoint 2 -->
-                <div class="border rounded-md mb-4">
-                    <div class="p-3 bg-blue-100 border-b flex items-center">
-                        <span class="bg-blue-500 text-white font-bold px-2 py-1 rounded text-xs mr-3">POST</span>
-                        <span class="font-mono">/api/weights/</span>
-                    </div>
-                    <div class="p-4">
-                        <h4 class="font-medium mb-2">Voeg een nieuwe gewichtsmeting toe</h4>
-                        <p class="text-sm text-gray-600 mb-3">
-                            Voegt een nieuwe gewichtsmeting toe voor een gebruiker.
-                        </p>
+]</code></pre>
+                                </div>
+                            </div>
+                        </div>
                         
-                        <h5 class="font-medium text-sm text-gray-700 mb-1">Request body:</h5>
-                        <pre class="bg-gray-100 p-2 rounded-md text-xs overflow-auto mb-3">
-{
+                        <!-- Add Weight -->
+                        <div class="mt-6">
+                            <div class="flex bg-blue-50 p-2 rounded-t-md border border-blue-200">
+                                <span class="px-2 py-1 bg-blue-500 text-white text-xs font-medium rounded mr-2">POST</span>
+                                <code class="text-sm">/api/weights</code>
+                            </div>
+                            <div class="bg-gray-50 border border-gray-200 border-t-0 rounded-b-md">
+                                <div class="p-4 border-b border-gray-200">
+                                    <h4 class="text-sm font-medium text-gray-700">Request Body:</h4>
+                                    <pre class="language-json mt-2 text-sm"><code>{
   "user_id": 1,
-  "weight": 80.5,
-  "goal_weight": 75.0,
-  "date": "2025-03-22"  // optioneel, standaard is de huidige datum
-}</pre>
-                        
-                        <h5 class="font-medium text-sm text-gray-700 mb-1">Voorbeeld respons:</h5>
-                        <pre class="bg-gray-100 p-2 rounded-md text-xs overflow-auto mb-3">
-{
+  "weight": 74.2,
+  "goal_weight": 70.0,
+  "date": "2025-03-27" // Optioneel, als niet gegeven wordt huidige datum gebruikt
+}</code></pre>
+                                </div>
+                                <div class="p-4">
+                                    <h4 class="text-sm font-medium text-gray-700">Response:</h4>
+                                    <pre class="language-json mt-2 text-sm"><code>{
   "id": 3,
   "user_id": 1,
-  "weight": 80.5,
-  "goal_weight": 75.0,
-  "date": "2025-03-22"
-}</pre>
-                    </div>
-                </div>
-                
-                <!-- Endpoint 3 -->
-                <div class="border rounded-md">
-                    <div class="p-3 bg-blue-100 border-b flex items-center">
-                        <span class="bg-blue-500 text-white font-bold px-2 py-1 rounded text-xs mr-3">POST</span>
-                        <span class="font-mono">/api/calculate/</span>
-                    </div>
-                    <div class="p-4">
-                        <h4 class="font-medium mb-2">Bereken tijd tot doel</h4>
-                        <p class="text-sm text-gray-600 mb-3">
-                            Berekent de tijd in dagen die nodig is om van het huidige gewicht naar het streefgewicht te gaan,
-                            op basis van het O(n²) algoritme.
+  "weight": 74.2,
+  "goal_weight": 70.0,
+  "date": "2025-03-27 00:00:00"
+}</code></pre>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Latest Weight -->
+                        <div class="mt-6">
+                            <div class="flex bg-green-50 p-2 rounded-t-md border border-green-200">
+                                <span class="px-2 py-1 bg-green-500 text-white text-xs font-medium rounded mr-2">GET</span>
+                                <code class="text-sm">/api/weights/{user_id}/latest</code>
+                            </div>
+                            <div class="bg-gray-50 border border-gray-200 border-t-0 rounded-b-md">
+                                <div class="p-4 border-b border-gray-200">
+                                    <h4 class="text-sm font-medium text-gray-700">Path Parameters:</h4>
+                                    <table class="mt-2 min-w-full divide-y divide-gray-200 text-sm">
+                                        <thead>
+                                            <tr>
+                                                <th class="px-4 py-2 text-left font-medium text-gray-500">Parameter</th>
+                                                <th class="px-4 py-2 text-left font-medium text-gray-500">Type</th>
+                                                <th class="px-4 py-2 text-left font-medium text-gray-500">Beschrijving</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <tr>
+                                                <td class="px-4 py-2 text-gray-700">user_id</td>
+                                                <td class="px-4 py-2 text-gray-700">integer</td>
+                                                <td class="px-4 py-2 text-gray-700">ID van de gebruiker</td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                                <div class="p-4">
+                                    <h4 class="text-sm font-medium text-gray-700">Response:</h4>
+                                    <pre class="language-json mt-2 text-sm"><code>{
+  "id": 3,
+  "user_id": 1,
+  "weight": 74.2,
+  "goal_weight": 70.0,
+  "date": "2025-03-27 00:00:00"
+}</code></pre>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Calculate Endpoint -->
+                        <h3 class="text-lg font-medium text-gray-900 mt-12">Berekenings Endpoint</h3>
+                        
+                        <div class="mt-4">
+                            <div class="flex bg-blue-50 p-2 rounded-t-md border border-blue-200">
+                                <span class="px-2 py-1 bg-blue-500 text-white text-xs font-medium rounded mr-2">POST</span>
+                                <code class="text-sm">/api/calculate</code>
+                            </div>
+                            <div class="bg-gray-50 border border-gray-200 border-t-0 rounded-b-md">
+                                <div class="p-4 border-b border-gray-200">
+                                    <h4 class="text-sm font-medium text-gray-700">Request Body:</h4>
+                                    <pre class="language-json mt-2 text-sm"><code>{
+  "gender": "male",
+  "weight": 75.0,
+  "height": 180.0,
+  "age": 30,
+  "activity_level": "moderate",
+  "sport": ["Swimming", "Tennis"],
+  "aantal_minuten_sporten": 30,
+  "gewenst_gewicht": 70.0,
+  "deficit_surplus": 500
+}</code></pre>
+                                </div>
+                                <div class="p-4">
+                                    <h4 class="text-sm font-medium text-gray-700">Response:</h4>
+                                    <pre class="language-json mt-2 text-sm"><code>{
+  "days_to_goal": 70.2,
+  "current_weight": 75.0,
+  "goal_weight": 70.0
+}</code></pre>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- User and Profile Endpoints -->
+                        <h3 class="text-lg font-medium text-gray-900 mt-12">Gebruikers Endpoints</h3>
+                        
+                        <!-- Get User -->
+                        <div class="mt-4">
+                            <div class="flex bg-green-50 p-2 rounded-t-md border border-green-200">
+                                <span class="px-2 py-1 bg-green-500 text-white text-xs font-medium rounded mr-2">GET</span>
+                                <code class="text-sm">/api/users/{user_id}</code>
+                            </div>
+                            <div class="bg-gray-50 border border-gray-200 border-t-0 rounded-b-md">
+                                <div class="p-4">
+                                    <h4 class="text-sm font-medium text-gray-700">Response:</h4>
+                                    <pre class="language-json mt-2 text-sm"><code>{
+  "id": 1,
+  "username": "test"
+}</code></pre>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Get Profile -->
+                        <div class="mt-6">
+                            <div class="flex bg-green-50 p-2 rounded-t-md border border-green-200">
+                                <span class="px-2 py-1 bg-green-500 text-white text-xs font-medium rounded mr-2">GET</span>
+                                <code class="text-sm">/api/profiles/{user_id}</code>
+                            </div>
+                            <div class="bg-gray-50 border border-gray-200 border-t-0 rounded-b-md">
+                                <div class="p-4">
+                                    <h4 class="text-sm font-medium text-gray-700">Response:</h4>
+                                    <pre class="language-json mt-2 text-sm"><code>{
+  "id": 1,
+  "user_id": 1,
+  "gender": "male",
+  "height": 180.0,
+  "age": 35,
+  "activity_level": "moderate"
+}</code></pre>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Create/Update Profile -->
+                        <div class="mt-6">
+                            <div class="flex bg-blue-50 p-2 rounded-t-md border border-blue-200">
+                                <span class="px-2 py-1 bg-blue-500 text-white text-xs font-medium rounded mr-2">POST</span>
+                                <code class="text-sm">/api/profiles</code>
+                            </div>
+                            <div class="bg-gray-50 border border-gray-200 border-t-0 rounded-b-md">
+                                <div class="p-4 border-b border-gray-200">
+                                    <h4 class="text-sm font-medium text-gray-700">Request Body:</h4>
+                                    <pre class="language-json mt-2 text-sm"><code>{
+  "user_id": 1,
+  "gender": "male",
+  "height": 182.0,
+  "age": 36,
+  "activity_level": "active"
+}</code></pre>
+                                </div>
+                                <div class="p-4">
+                                    <h4 class="text-sm font-medium text-gray-700">Response:</h4>
+                                    <pre class="language-json mt-2 text-sm"><code>{
+  "id": 1,
+  "user_id": 1,
+  "gender": "male",
+  "height": 182.0,
+  "age": 36,
+  "activity_level": "active"
+}</code></pre>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Error Handling -->
+                        <h3 class="text-lg font-medium text-gray-900 mt-12">Foutmeldingen</h3>
+                        <p class="text-gray-600">
+                            De API retourneert HTTP-statuscodes om het resultaat van elke aanvraag aan te geven. Hier zijn de mogelijke foutcodes:
                         </p>
                         
-                        <h5 class="font-medium text-sm text-gray-700 mb-1">Request body:</h5>
-                        <pre class="bg-gray-100 p-2 rounded-md text-xs overflow-auto mb-3">
-{
-  "user_id": 1,
-  "weight": 80.5,
-  "goal_weight": 75.0
-}</pre>
+                        <table class="mt-4 min-w-full divide-y divide-gray-200 text-sm">
+                            <thead>
+                                <tr>
+                                    <th class="px-4 py-2 text-left font-medium text-gray-500">Status Code</th>
+                                    <th class="px-4 py-2 text-left font-medium text-gray-500">Beschrijving</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-gray-200">
+                                <tr>
+                                    <td class="px-4 py-2 text-gray-700">400</td>
+                                    <td class="px-4 py-2 text-gray-700">Ongeldige invoer of verzoek</td>
+                                </tr>
+                                <tr>
+                                    <td class="px-4 py-2 text-gray-700">401</td>
+                                    <td class="px-4 py-2 text-gray-700">Ongeldige gebruikersnaam of wachtwoord</td>
+                                </tr>
+                                <tr>
+                                    <td class="px-4 py-2 text-gray-700">404</td>
+                                    <td class="px-4 py-2 text-gray-700">Resource niet gevonden</td>
+                                </tr>
+                                <tr>
+                                    <td class="px-4 py-2 text-gray-700">500</td>
+                                    <td class="px-4 py-2 text-gray-700">Interne serverfout</td>
+                                </tr>
+                                <tr>
+                                    <td class="px-4 py-2 text-gray-700">503</td>
+                                    <td class="px-4 py-2 text-gray-700">Service niet beschikbaar</td>
+                                </tr>
+                            </tbody>
+                        </table>
                         
-                        <h5 class="font-medium text-sm text-gray-700 mb-1">Voorbeeld respons:</h5>
-                        <pre class="bg-gray-100 p-2 rounded-md text-xs overflow-auto mb-3">
-{
-  "days_to_goal": 5.5,
-  "current_weight": 80.5,
-  "goal_weight": 75.0
-}</pre>
+                        <!-- Code Examples -->
+                        <h3 class="text-lg font-medium text-gray-900 mt-12">Code Voorbeelden</h3>
+                        
+                        <div class="mt-4">
+                            <h4 class="text-md font-medium text-gray-700">JavaScript (Fetch)</h4>
+                            <pre class="language-javascript mt-2 text-sm"><code>// Inloggen
+fetch('http://localhost:8000/api/login', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({
+    username: 'test',
+    password: 'password'
+  })
+})
+.then(response => response.json())
+.then(data => {
+  console.log('Ingelogd als gebruiker:', data);
+  
+  // Gewicht toevoegen
+  return fetch('http://localhost:8000/api/weights', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      user_id: data.id,
+      weight: 74.5,
+      goal_weight: 70.0
+    })
+  });
+})
+.then(response => response.json())
+.then(data => console.log('Gewicht toegevoegd:', data))
+.catch(error => console.error('Error:', error));</code></pre>
+                        </div>
+                        
+                        <div class="mt-6">
+                            <h4 class="text-md font-medium text-gray-700">Python (Requests)</h4>
+                            <pre class="language-python mt-2 text-sm"><code>import requests
+
+# Inloggen
+login_response = requests.post('http://localhost:8000/api/login', json={
+    'username': 'test',
+    'password': 'password'
+})
+user = login_response.json()
+print(f"Ingelogd als gebruiker: {user}")
+
+# Gewichten ophalen
+weights_response = requests.get(f"http://localhost:8000/api/weights/{user['id']}")
+weights = weights_response.json()
+print(f"Gewichten: {weights}")
+
+# Berekening uitvoeren
+calc_response = requests.post('http://localhost:8000/api/calculate', json={
+    'gender': 'male',
+    'weight': 75.0,
+    'height': 180.0,
+    'age': 30,
+    'activity_level': 'moderate',
+    'sport': ['Swimming'],
+    'aantal_minuten_sporten': 30,
+    'gewenst_gewicht': 70.0,
+    'deficit_surplus': 500
+})
+result = calc_response.json()
+print(f"Berekening resultaat: {result}")
+</code></pre>
+                        </div>
                     </div>
                 </div>
             </div>
-        </div>
+        </main>
         
-        <!-- Over het Algoritme -->
-        <div class="bg-white rounded-lg shadow-md overflow-hidden">
-            <div class="px-6 py-4 bg-purple-500 text-white">
-                <h2 class="text-xl font-semibold">Over het O(n²) Algoritme</h2>
+        <!-- Footer -->
+        <footer class="bg-white mt-auto">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+                <p class="text-center text-sm text-gray-500">Gewichtstracker API Documentatie &copy; 2025</p>
             </div>
-            <div class="p-6">
-                <p class="mb-4">
-                    Deze API maakt gebruik van een speciaal O(n²) algoritme om de tijd te berekenen die nodig is
-                    om een gewichtsdoel te bereiken. 
-                </p>
-                
-                <h3 class="text-lg font-medium text-gray-800 mt-4 mb-2">Hoe werkt het?</h3>
-                <p class="mb-4">
-                    Het algoritme gebruikt het verschil tussen het huidige gewicht en het streefgewicht als input (n).
-                    Vervolgens voert het een berekening uit met een tijdscomplexiteit van O(n²), wat betekent dat de
-                    rekentijd kwadratisch toeneemt met het verschil in gewicht.
-                </p>
-                
-                <h3 class="text-lg font-medium text-gray-800 mt-4 mb-2">Pseudocode</h3>
-                <pre class="bg-gray-100 p-3 rounded-md text-sm overflow-auto mb-4">
-function calculate_time_to_goal(current_weight, goal_weight):
-    n = abs(current_weight - goal_weight)
-    result = 0
-    
-    # O(n²) loop
-    for i = 0 to n-1:
-        for j = 0 to n-1:
-            result += kleine_factor
-    
-    return max(1, min(n, result + n))
-</pre>
-                
-                <p class="text-sm text-gray-600">
-                    <strong>Opmerking:</strong> Dit algoritme is specifiek ontwikkeld voor deze applicatie en dient
-                    als demonstratie van een O(n²) implementatie. In een productieomgeving zou een efficiënter
-                    algoritme kunnen worden gebruikt.
-                </p>
-            </div>
-        </div>
-    </main>
+        </footer>
+    </div>
 </body>
 </html>
