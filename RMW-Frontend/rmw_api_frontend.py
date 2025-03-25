@@ -341,17 +341,26 @@ async def dashboard(request: Request):
                 light_option = None
                 standard_option = None
                 intensive_option = None
+                light_results = []
+                standard_results = []
+                intensive_results = []
         except Exception as e:
             print(f"Error getting user profile for dashboard: {str(e)}")
             calculation_results = None
             light_option = None
             standard_option = None
             intensive_option = None
+            light_results = []
+            standard_results = []
+            intensive_results = []
     else:
         calculation_results = None
         light_option = None
         standard_option = None
         intensive_option = None
+        light_results = []
+        standard_results = []
+        intensive_results = []
     
     return templates.TemplateResponse(
         "dashboard.html", 
@@ -362,7 +371,10 @@ async def dashboard(request: Request):
             "calculation_results": calculation_results,
             "light_option": light_option,
             "standard_option": standard_option,
-            "intensive_option": intensive_option
+            "intensive_option": intensive_option,
+            "light_results": light_results,
+            "standard_results": standard_results,
+            "intensive_results": intensive_results
         }
     )
 
@@ -548,6 +560,9 @@ async def handle_entry(
         light_option = None
         standard_option = None
         intensive_option = None
+        light_results = []
+        standard_results = []
+        intensive_results = []
     
     # Haal gewichtsgeschiedenis op
     entries = await db_get_weights(int(user_id))
@@ -561,7 +576,10 @@ async def handle_entry(
             "calculation_results": calculation_results,
             "light_option": light_option,
             "standard_option": standard_option,
-            "intensive_option": intensive_option
+            "intensive_option": intensive_option,
+            "light_results": light_results,
+            "standard_results": standard_results,
+            "intensive_results": intensive_results
         }
     )
 

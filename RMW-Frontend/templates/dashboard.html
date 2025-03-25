@@ -69,7 +69,7 @@
                                             </div>
                                             <div class="flex justify-between mb-1">
                                                 <span>Dagelijkse calorie-inname:</span>
-                                                <span>{{ light_results[0].goal|round }} kcal</span>
+                                                <span>{% if light_results and light_results|length > 0 %}{{ light_results[0].goal|round }}{% else %}{{ light_option.tdee|round }}{% endif %} kcal</span>
                                             </div>
                                             <div class="flex justify-between">
                                                 <span>
@@ -109,7 +109,7 @@
                                             </div>
                                             <div class="flex justify-between mb-1">
                                                 <span>Dagelijkse calorie-inname:</span>
-                                                <span>{{ standard_results[0].goal|round }} kcal</span>
+                                                <span>{% if standard_results and standard_results|length > 0 %}{{ standard_results[0].goal|round }}{% else %}{{ standard_option.tdee|round }}{% endif %} kcal</span>
                                             </div>
                                             <div class="flex justify-between">
                                                 <span>
@@ -149,7 +149,7 @@
                                             </div>
                                             <div class="flex justify-between mb-1">
                                                 <span>Dagelijkse calorie-inname:</span>
-                                                <span>{{ intensive_results[0].goal|round }} kcal</span>
+                                                <span>{% if intensive_results and intensive_results|length > 0 %}{{ intensive_results[0].goal|round }}{% else %}{{ intensive_option.tdee|round }}{% endif %} kcal</span>
                                             </div>
                                             <div class="flex justify-between">
                                                 <span>
