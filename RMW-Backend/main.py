@@ -33,34 +33,57 @@ def calculate_time(sport, weight, gewenst_gewicht, time, deficit_surplus):
     Returns:
         Estimated days to reach goal
     """
+    # Debug input values
+    print(f"calculate_time called with: sport={sport}, weight={weight}, goal={gewenst_gewicht}, time={time}, deficit={deficit_surplus}")
+    
+    # If weights are very close, return a small value
+    if abs(weight - gewenst_gewicht) < 0.1:
+        print(f"Weight and goal weight are very close ({weight} vs {gewenst_gewicht}), returning minimal time")
+        return 0.1
+    
     # Avoid division by zero
     if deficit_surplus == 0 and (sport not in caloric_burn_rates or time == 0):
+        print("No caloric changes detected, returning infinite time")
         return float('inf')  # Infinite time if no caloric changes
     
     if gewenst_gewicht > weight:
         # Weight gain scenario
         total = deficit_surplus
         if total <= 0:
+            print("Can't gain weight with caloric deficit, returning infinite time")
             return float('inf')  # Can't gain weight with deficit
-        return (7000 * abs(weight - gewenst_gewicht)) / abs(total)
+            
+        # Calculate days needed
+        days = (7000 * abs(weight - gewenst_gewicht)) / abs(total)
+        print(f"Weight gain calculation: {days} days")
+        return days
     else:
         # Weight loss scenario
         total = 0
-        for x in caloric_burn_rates:
-            if sport == x:
-                total = caloric_burn_rates[x] * time
+        if sport in caloric_burn_rates:
+            sport_burn = caloric_burn_rates[sport] * time
+            print(f"Sport caloric burn: {sport} burns {sport_burn} calories in {time} minutes")
+            total = sport_burn
+        else:
+            print(f"Sport {sport} not found in caloric burn rates")
         
         # Add deficit for weight loss
         if weight > gewenst_gewicht:
             total += deficit_surplus
+            print(f"Adding deficit {deficit_surplus} for weight loss, total: {total}")
         else:
             total -= deficit_surplus
+            print(f"Subtracting deficit {deficit_surplus}, total: {total}")
             
         # Can't lose weight without caloric deficit
         if total <= 0:
+            print("No caloric deficit for weight loss, returning infinite time")
             return float('inf')
             
-        return (7000 * abs(weight - gewenst_gewicht)) / abs(total)
+        # Calculate days needed
+        days = (7000 * abs(weight - gewenst_gewicht)) / abs(total)
+        print(f"Weight loss calculation: {days} days")
+        return days
 
 def calculate_bmr(weight, height, age, gender):
     """
@@ -120,9 +143,27 @@ def calculate(input_data: UserInput):
         Dictionary with calculation results
     """
     try:
+        # Debug input data
+        print(f"Received calculation request with data: {input_data}")
+        print(f"Sports selected: {input_data.sport}")
+        print(f"Current weight: {input_data.weight}, Goal weight: {input_data.gewenst_gewicht}")
+        print(f"Minutes of sport: {input_data.aantal_minuten_sporten}")
+        
         # Validate input
         if not input_data.sport:
             raise HTTPException(status_code=400, detail="At least one sport must be selected")
+        
+        # Make sure sports are valid
+        valid_sports = [s for s in input_data.sport if s in caloric_burn_rates]
+        if not valid_sports:
+            print(f"No valid sports found in {input_data.sport}. Valid sports are: {list(caloric_burn_rates.keys())}")
+            raise HTTPException(status_code=400, detail=f"No valid sports selected. Valid options are: {list(caloric_burn_rates.keys())}")
+            
+        # Ensure we have a non-zero exercise time if needed for calculations
+        if input_data.aantal_minuten_sporten <= 0:
+            print(f"Minutes of sport is too low: {input_data.aantal_minuten_sporten}")
+            # Set a minimum value to prevent calculation issues
+            input_data.aantal_minuten_sporten = 1
             
         # Calculate BMR and TDEE
         BMR = calculate_bmr(input_data.weight, input_data.height, input_data.age, input_data.gender)
@@ -139,6 +180,7 @@ def calculate(input_data: UserInput):
                 try:
                     # Skip invalid sports
                     if v not in caloric_burn_rates:
+                        print(f"Skipping invalid sport: {v}")
                         continue
                         
                     tijd = calculate_time(v, input_data.weight, input_data.gewenst_gewicht, input_data.aantal_minuten_sporten, i)
@@ -147,6 +189,8 @@ def calculate(input_data: UserInput):
                     if not math.isinf(tijd):
                         days_total += tijd
                         valid_calculations += 1
+                    else:
+                        print(f"Calculation resulted in infinite time for sport {v} with deficit {i}")
                     
                     count += 1
                     
@@ -174,19 +218,35 @@ def calculate(input_data: UserInput):
         # Calculate average days to goal (only from valid calculations)
         if valid_calculations > 0:
             days_to_goal = days_total / valid_calculations
+            print(f"Average days to goal: {days_to_goal} (from {valid_calculations} valid calculations)")
         else:
             days_to_goal = float('inf')
+            print("No valid calculations found, setting days_to_goal to infinity")
             
         # If days to goal is infinite, set a very high number
         if math.isinf(days_to_goal):
             days_to_goal = 9999
+            print("Infinite days to goal converted to 9999")
+        elif days_to_goal < 0.1:
+            # If days to goal is very small (nearly instant), set it to 0.1 to avoid showing 0
+            days_to_goal = 0.1
+            print("Very small days to goal value, setting to 0.1 minimum")
         
-        return {
+        response_data = {
             "results": results,
             "days_to_goal": round(days_to_goal, 2),
             "BMR": round(BMR, 2),
             "TDEE": round(TDEE, 2),
             "weight_difference": round(abs(input_data.weight - input_data.gewenst_gewicht), 2)
         }
+        
+        print(f"Calculation complete. Response: {response_data}")
+        return response_data
+    except HTTPException as he:
+        print(f"HTTP Exception in calculation: {he.detail}")
+        raise he
     except Exception as e:
+        print(f"Unhandled error in calculation: {str(e)}")
+        import traceback
+        traceback.print_exc()
         raise HTTPException(status_code=500, detail=f"Error in calculation: {str(e)}")

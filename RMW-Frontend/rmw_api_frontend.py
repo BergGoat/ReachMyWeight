@@ -49,7 +49,15 @@ async def call_original_api(data: Dict[str, Any]) -> Dict[str, Any]:
     """
     async with httpx.AsyncClient() as client:
         try:
-            print(f"Calling original API at {ORIGINAL_API_URL}/calculate with data: {data}")
+            # More detailed debugging
+            print(f"**** DEBUG ****")
+            print(f"Calling original API at {ORIGINAL_API_URL}/calculate")
+            print(f"Request data: {data}")
+            print(f"Sport types: {data.get('sport', [])}")
+            print(f"Minuten sporten: {data.get('aantal_minuten_sporten', 0)}")
+            print(f"Current weight: {data.get('weight', 0)}, Goal weight: {data.get('gewenst_gewicht', 0)}")
+            print(f"**** END DEBUG ****")
+            
             response = await client.post(f"{ORIGINAL_API_URL}/calculate", json=data)
             response.raise_for_status()  # Raise exception voor HTTP errors
             result = response.json()
@@ -57,6 +65,9 @@ async def call_original_api(data: Dict[str, Any]) -> Dict[str, Any]:
             return result
         except httpx.HTTPError as e:
             print(f"HTTP Error: {e}")
+            # Print the full error response if available
+            if hasattr(e, 'response') and hasattr(e.response, 'text'):
+                print(f"Error response content: {e.response.text}")
             raise HTTPException(
                 status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
                 detail=f"Kon geen verbinding maken met de originele API: {str(e)}"
