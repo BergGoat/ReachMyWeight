@@ -68,8 +68,13 @@ async def redeploy(
             # Create a temporary directory to extract the monitoring files
             with tempfile.TemporaryDirectory() as tmpdirname:
                 # Run a container with the monitoring image, mounting the temp directory
-                extract_command = f"docker run --rm -v {tmpdirname}:/output {config['image']} sh -c 'cp -r /app/monitoring/* /output/ && ls -la /output/'"
-                subprocess.run(extract_command, shell=True, check=True)
+                # Use the extraction script we created in the Dockerfile
+                extract_command = f"docker run --rm -v {tmpdirname}:/extract_dir {config['image']} /extract.sh /extract_dir"
+                result_extract = subprocess.run(extract_command, shell=True, check=True, capture_output=True, text=True)
+                print(f"Extraction output: {result_extract.stdout}")
+                
+                # Debug: list the extracted files
+                print(f"Contents of extracted directory: {os.listdir(tmpdirname)}")
                 
                 # Check if docker-stack.yml exists in the extracted files
                 if not os.path.exists(f"{tmpdirname}/docker-stack.yml"):
