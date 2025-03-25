@@ -68,11 +68,18 @@ async def redeploy(
             # Create a temporary directory to extract the monitoring files
             with tempfile.TemporaryDirectory() as tmpdirname:
                 # Run a container with the monitoring image, mounting the temp directory
-                extract_command = f"docker run --rm -v {tmpdirname}:/output {config['image']} cp -r /app/monitoring/. /output/"
+                extract_command = f"docker run --rm -v {tmpdirname}:/output {config['image']} sh -c 'cp -r /app/monitoring/* /output/ && ls -la /output/'"
                 subprocess.run(extract_command, shell=True, check=True)
                 
+                # Check if docker-stack.yml exists in the extracted files
+                if not os.path.exists(f"{tmpdirname}/docker-stack.yml"):
+                    raise HTTPException(
+                        status_code=500, 
+                        detail=f"docker-stack.yml file not found in the extracted monitoring files. Contents: {os.listdir(tmpdirname)}"
+                    )
+                    
                 # Deploy the stack with the extracted files
-                stack_command = f"cd {tmpdirname} && docker stack deploy -c {config['stack_file']} {config['stack_name']} --with-registry-auth"
+                stack_command = f"cd {tmpdirname} && docker stack deploy -c docker-stack.yml {config['stack_name']} --with-registry-auth"
                 result = subprocess.run(
                     stack_command,
                     shell=True,

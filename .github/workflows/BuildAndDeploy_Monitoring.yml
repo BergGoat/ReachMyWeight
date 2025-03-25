@@ -16,6 +16,19 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       
+      - name: List monitoring files for verification
+        run: |
+          echo "Verifying monitoring files in repo:"
+          ls -la RMW-Monitoring/
+          echo "Checking if docker-stack.yml exists:"
+          if [ -f "RMW-Monitoring/docker-stack.yml" ]; then
+            echo "docker-stack.yml exists in the repository"
+            head -n 5 RMW-Monitoring/docker-stack.yml
+          else
+            echo "ERROR: docker-stack.yml does not exist in the repository"
+            exit 1
+          fi
+      
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v2
         
@@ -53,15 +66,14 @@ jobs:
           else
             echo "Redeployment trigger message not detected."
             echo "status=incomplete" >> $GITHUB_OUTPUT
+            echo "Error details:"
+            echo "$redeploy_response"
+            exit 1
           fi
         env:
           DEPLOY_API_KEY: ${{ secrets.DEPLOY_API_KEY }}
           
       - name: Wait for redeployment completion
+        if: steps.redeploy.outputs.status == 'complete'
         run: |
-          if [ "${{ steps.redeploy.outputs.status }}" = "complete" ]; then
-            echo "Redeployment complete based on trigger message."
-          else
-            echo "Redeployment not complete. Exiting."
-            exit 1
-          fi 
+          echo "Redeployment complete based on trigger message." 

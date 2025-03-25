@@ -4,10 +4,15 @@ FROM alpine:latest
 RUN apk add --no-cache docker-cli curl
 
 # Copy all monitoring configuration files
-COPY . /app/monitoring
+COPY . /app/monitoring/
 
 # Set working directory
 WORKDIR /app/monitoring
+
+# Make sure all files were copied properly
+RUN ls -la /app/monitoring && \
+    echo "Verifying key files:" && \
+    ls -la /app/monitoring/docker-stack.yml || echo "WARNING: docker-stack.yml not found!"
 
 # Make sure we can execute the deploy script
 RUN chmod +x /app/monitoring/deploy.sh || echo "No deploy.sh script present"
