@@ -17,6 +17,7 @@
   - [Troubleshooting](#troubleshooting)
   	- [Mac Users](#mac-users)
   - [Interesting Projects that use this Repo](#interesting-projects-that-use-this-repo)
+  - [Deployment with CI/CD](#deployment-with-cicd)
 
 # A Prometheus & Grafana docker-compose stack
 
@@ -138,12 +139,12 @@ Verify all the services have been provisioned. The Replica count for each servic
 ## Check the Metrics
 Once all the services are up we can open the Traefik Dashboard. The dashboard should show us our frontend and backends configured for both Grafana and Prometheus.
 
-    http://localhost:8080
+    http://localhost:8081
 
 
 Take a look at the metrics which Traefik is now producing in Prometheus metrics format
 
-    http://localhost:8080/metrics
+    http://localhost:8081/metrics
 
 
 ## Login to Grafana and Visualize Metrics
@@ -190,3 +191,46 @@ Several projects utilize this Prometheus stack. Here's the list of projects:
 * [Dockerize Your Dev](https://github.com/RiFi2k/dockerize-your-dev) - Docker compose a VM to get LetsEncrypt / NGINX proxy auto provisioning, ELK logging, Prometheus / Grafana monitoring, Portainer GUI, and more...
 
 *Have an interesting Project which uses this Repo? Submit yours to the list*
+
+## Deployment with CI/CD
+
+This Grafana/Prometheus monitoring stack is now integrated with the ReachMyWeight CI/CD pipeline. When changes are pushed to the `main` branch affecting files in the `RMW-Monitoring` directory, the GitHub Actions workflow will automatically:
+
+1. Build a Docker image containing all monitoring configuration files
+2. Push this image to Docker Hub as `steelduck1/rmw-monitoring:latest`
+3. Trigger a redeployment through the redeployment API
+
+### How it works
+
+1. The GitHub workflow (`.github/workflows/BuildAndDeploy_Monitoring.yml`) is triggered when:
+   - Files in the `RMW-Monitoring` directory are changed and merged to `main`
+   - The workflow is manually triggered through GitHub UI
+
+2. The workflow:
+   - Builds a Docker image containing all monitoring configuration
+   - Pushes the image to Docker Hub
+   - Triggers the redeployment API to update the monitoring stack
+
+3. The redeployment process:
+   - Pulls the latest monitoring image from Docker Hub
+   - Extracts the configuration files from the image
+   - Deploys the stack with the updated configuration
+   - Handles the stack deployment with zero downtime
+
+### Making Changes
+
+To make changes to the monitoring configuration:
+
+1. Create a branch from `main`
+2. Make your changes to files in the `RMW-Monitoring` directory
+3. Create a pull request to merge into `main`
+4. Once approved and merged, the CI/CD pipeline will automatically deploy your changes
+
+### Manual Deployment
+
+You can also manually trigger the deployment by:
+
+1. Going to the GitHub repository
+2. Selecting the "Actions" tab
+3. Choosing the "Build and Deploy Monitoring Stack" workflow
+4. Clicking "Run workflow"
