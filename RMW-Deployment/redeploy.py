@@ -76,7 +76,7 @@ async def redeploy(
                 print(f"Container contents: {result_list.stdout}")
                 
                 # Run a container with the monitoring image, mounting the temp directory
-                extract_command = f"docker run --rm -v {tmpdirname}:/target --user root {config['image']} /bin/sh -c 'mkdir -p /target && cp -rv /app/monitoring/* /target/ && chown -R 1000:1000 /target && chmod -R 755 /target && ls -la /target'"
+                extract_command = f"docker run --rm -v {tmpdirname}:/target --user root {config['image']} /bin/sh -c 'mkdir -p /target && echo \"Source directory contents:\" && ls -la /app/monitoring && echo \"Copying files...\" && cp -rv /app/monitoring/* /target/ && echo \"Target directory contents:\" && ls -la /target && echo \"Setting permissions...\" && chown -R 1000:1000 /target && chmod -R 755 /target'"
                 result_extract = subprocess.run(extract_command, shell=True, check=True, capture_output=True, text=True)
                 print(f"Extraction output: {result_extract.stdout}")
                 
@@ -85,10 +85,17 @@ async def redeploy(
                 
                 # Check if docker-stack.yml exists in the extracted files
                 if not os.path.exists(f"{tmpdirname}/docker-stack.yml"):
-                    raise HTTPException(
-                        status_code=500, 
-                        detail=f"docker-stack.yml file not found in the extracted monitoring files. Contents: {os.listdir(tmpdirname)}"
-                    )
+                    # Try to find the file with a different case
+                    files = os.listdir(tmpdirname)
+                    stack_file = next((f for f in files if f.lower() == 'docker-stack.yml'), None)
+                    if stack_file:
+                        # Rename the file to the correct case
+                        os.rename(f"{tmpdirname}/{stack_file}", f"{tmpdirname}/docker-stack.yml")
+                    else:
+                        raise HTTPException(
+                            status_code=500, 
+                            detail=f"docker-stack.yml file not found in the extracted monitoring files. Contents: {files}"
+                        )
                 
                 # Make sure the stack file is readable
                 os.chmod(f"{tmpdirname}/docker-stack.yml", 0o644)
