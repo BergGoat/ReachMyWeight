@@ -87,7 +87,7 @@ services:
   prometheus:
     image: prom/prometheus:v2.36.2
     volumes:
-      - prometheus_data:/etc/prometheus
+      - ./prometheus:/etc/prometheus
       - prometheus_data:/prometheus
     command:
       - '--config.file=/etc/prometheus/prometheus.yml'
@@ -163,7 +163,7 @@ services:
     volumes:
       - grafana_data:/var/lib/grafana
     environment:
-      - GF_SECURITY_ADMIN_PASSWORD=admin
+      - GF_SECURITY_ADMIN_PASSWORD=foobar
       - GF_USERS_ALLOW_SIGN_UP=false
     networks:
       - monitor-net
@@ -173,12 +173,78 @@ services:
         condition: on-failure
 """
                 
-                # Write the simplified stack file
+                # Create a basic prometheus configuration
+                os.makedirs(f"{tmpdirname}/prometheus", exist_ok=True)
+                prometheus_config = """
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+scrape_configs:
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']
+
+  - job_name: 'cadvisor'
+    static_configs:
+      - targets: ['cadvisor:8080']
+
+  - job_name: 'node-exporter'
+    static_configs:
+      - targets: ['node-exporter:9100']
+"""
+                with open(f"{tmpdirname}/prometheus/prometheus.yml", 'w') as f:
+                    f.write(prometheus_config)
+                
+                # Create Grafana provisioning folders
+                os.makedirs(f"{tmpdirname}/grafana/provisioning/dashboards", exist_ok=True)
+                os.makedirs(f"{tmpdirname}/grafana/provisioning/datasources", exist_ok=True)
+                
+                # Create datasource provisioning config
+                datasource_config = """
+apiVersion: 1
+
+datasources:
+  - name: Prometheus
+    type: prometheus
+    access: proxy
+    url: http://prometheus:9090
+    isDefault: true
+"""
+                with open(f"{tmpdirname}/grafana/provisioning/datasources/prometheus.yml", 'w') as f:
+                    f.write(datasource_config)
+                
+                # Create dashboard provisioning config
+                dashboard_config = """
+apiVersion: 1
+
+providers:
+  - name: 'default'
+    orgId: 1
+    folder: ''
+    type: file
+    disableDeletion: false
+    updateIntervalSeconds: 10
+    allowUiUpdates: true
+    options:
+      path: /etc/grafana/provisioning/dashboards
+      foldersFromFilesStructure: true
+"""
+                with open(f"{tmpdirname}/grafana/provisioning/dashboards/default.yml", 'w') as f:
+                    f.write(dashboard_config)
+                
+                # Update the Grafana service in the stack file to use the provisioning folders
+                simplified_stack = simplified_stack.replace(
+                    "  grafana:\n    image: grafana/grafana\n    depends_on:\n      - prometheus\n    ports:\n      - 3000:3000\n    volumes:\n      - grafana_data:/var/lib/grafana",
+                    "  grafana:\n    image: grafana/grafana\n    depends_on:\n      - prometheus\n    ports:\n      - 3000:3000\n    volumes:\n      - grafana_data:/var/lib/grafana\n      - ./grafana/provisioning:/etc/grafana/provisioning"
+                )
+                
+                # Write the updated stack file
                 stack_file_path = f"{tmpdirname}/docker-stack.yml"
                 with open(stack_file_path, 'w') as f:
                     f.write(simplified_stack)
                 
-                print(f"Created stack file at {stack_file_path}")
+                print(f"Created stack file at {stack_file_path} with Grafana provisioning setup")
                 
                 # Make sure the stack file is readable
                 os.chmod(stack_file_path, 0o644)
