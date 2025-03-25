@@ -1,10 +1,7 @@
 FROM alpine:latest
 
 # Install necessary tools including python and PyYAML for YAML validation
-RUN apk add --no-cache docker-cli curl python3 py3-pip
-
-# Install PyYAML for YAML validation
-RUN pip3 install pyyaml
+RUN apk add --no-cache docker-cli curl python3 py3-yaml
 
 # Create app user to avoid permission issues
 RUN adduser -D -u 1000 appuser
