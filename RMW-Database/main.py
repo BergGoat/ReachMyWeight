@@ -39,20 +39,6 @@ class UserResponse(BaseModel):
     id: int
     username: str
 
-class Profile(BaseModel):
-    user_id: int
-    gender: str
-    height: float
-    age: int
-    activity_level: str
-
-class ProfileResponse(BaseModel):
-    id: int
-    user_id: int
-    gender: str
-    height: float
-    age: int
-    activity_level: str
 
 class Weight(BaseModel):
     user_id: int
@@ -103,35 +89,6 @@ async def login(user: User, db: sqlite3.Connection = Depends(get_db)):
     
     return dict(result)
 
-# Profile endpoints
-@app.post("/profiles", response_model=ProfileResponse)
-async def create_profile(profile: Profile, db: sqlite3.Connection = Depends(get_db)):
-    # Verify user exists
-    user = db.execute("SELECT id FROM users WHERE id = ?", (profile.user_id,)).fetchone()
-    if user is None:
-        raise HTTPException(status_code=404, detail="User not found")
-    
-    try:
-        cursor = db.execute(
-            "INSERT INTO profiles (user_id, gender, height, age, activity_level) VALUES (?, ?, ?, ?, ?)",
-            (profile.user_id, profile.gender, profile.height, profile.age, profile.activity_level)
-        )
-        db.commit()
-        profile_id = cursor.lastrowid
-        
-        result = db.execute("SELECT * FROM profiles WHERE id = ?", (profile_id,)).fetchone()
-        return dict(result)
-    except sqlite3.IntegrityError:
-        raise HTTPException(status_code=400, detail="Profile already exists for this user")
-
-@app.get("/profiles/{user_id}", response_model=ProfileResponse)
-async def get_profile(user_id: int, db: sqlite3.Connection = Depends(get_db)):
-    result = db.execute("SELECT * FROM profiles WHERE user_id = ?", (user_id,)).fetchone()
-    
-    if result is None:
-        raise HTTPException(status_code=404, detail="Profile not found")
-    
-    return dict(result)
 
 # Weight endpoints with original paths
 @app.post("/weights", response_model=WeightResponse)
@@ -211,14 +168,6 @@ async def get_user_api(user_id: int, db: sqlite3.Connection = Depends(get_db)):
 async def login_api(user: User, db: sqlite3.Connection = Depends(get_db)):
     return await login(user, db)
 
-# Profile endpoints with /api/ prefix
-@app.post("/api/profiles", response_model=ProfileResponse)
-async def create_profile_api(profile: Profile, db: sqlite3.Connection = Depends(get_db)):
-    return await create_profile(profile, db)
-
-@app.get("/api/profiles/{user_id}", response_model=ProfileResponse)
-async def get_profile_api(user_id: int, db: sqlite3.Connection = Depends(get_db)):
-    return await get_profile(user_id, db)
 
 # Weight endpoints with /api/ prefix to match the frontend
 @app.post("/api/weights", response_model=WeightResponse)

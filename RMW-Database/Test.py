@@ -43,26 +43,6 @@ def test_get_user():
     assert data["id"] == 1
     assert data["username"] == "testuser"
  
-# Profile tests
-def test_create_profile():
-    response = client.post("/profiles", json={
-        "user_id": 1,
-        "gender": "male",
-        "height": 180,
-        "age": 25,
-        "activity_level": "moderate"
-    })
-    assert response.status_code == 200
-    data = response.json()
-    assert data["user_id"] == 1
- 
-def test_get_profile():
-    response = client.get("/profiles/1")
-    assert response.status_code == 200
-    data = response.json()
-    assert data["user_id"] == 1
-    assert data["gender"] == "male"
- 
 # Weight tests
 def test_create_weight():
     response = client.post("/weights", json={
