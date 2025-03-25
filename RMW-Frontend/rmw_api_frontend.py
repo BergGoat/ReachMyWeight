@@ -33,8 +33,8 @@ templates = Jinja2Templates(directory="templates")
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
 # URL van de bestaande APIs
-ORIGINAL_API_URL = os.environ.get("ORIGINAL_API_URL", "http://Backend:8001")
-DATABASE_API_URL = os.environ.get("DATABASE_API_URL", "http://Database:8002")
+ORIGINAL_API_URL = os.environ.get("ORIGINAL_API_URL")
+DATABASE_API_URL = os.environ.get("DATABASE_API_URL")
 
 # Functie om met de originele API te communiceren
 async def call_original_api(data: Dict[str, Any]) -> Dict[str, Any]:
@@ -110,18 +110,8 @@ async def db_get_weights(user_id: int):
     return await call_database_api("GET", f"/api/weights/{user_id}")
 
 async def db_get_user_profile(user_id: int):
-    """Haalt profielgegevens op voor een gebruiker via de Database API."""
-    user = await call_database_api("GET", f"/api/users/{user_id}")
-    
-    try:
-        profile = await call_database_api("GET", f"/api/profiles/{user_id}")
-    except HTTPException as e:
-        if e.status_code == 404:
-            profile = None
-        else:
-            raise e
-    
-    return user, profile
+    """Haalt gebruikersgegevens op via de Database API."""
+    return await call_database_api("GET", f"/api/users/{user_id}")
 
 async def db_add_weight(user_id: int, weight: float, goal_weight: float, date_str: str = None):
     """Voegt een nieuwe gewichtsmeting toe via de Database API."""
@@ -247,22 +237,14 @@ async def entry_page(request: Request, error: str = None):
         return RedirectResponse(url="/login")
     
     # Haal gebruikersgegevens op
-    user, profile = await db_get_user_profile(int(user_id))
-    
-    gender = profile["gender"] if profile and "gender" in profile else "male"
-    height = profile["height"] if profile and "height" in profile else 170
-    age = profile["age"] if profile and "age" in profile else 30
-    activity_level = profile["activity_level"] if profile and "activity_level" in profile else "moderate"
+    user = await db_get_user_profile(int(user_id))
     
     return templates.TemplateResponse(
         "entry.html", 
         {
             "request": request, 
             "username": username,
-            "gender": gender,
-            "height": height,
-            "age": age,
-            "activity_level": activity_level,
+            "user": user,
             "error": error
         }
     )
