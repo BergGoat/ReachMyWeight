@@ -1,5 +1,6 @@
 import pytest
 import sqlite3
+import time
 from fastapi.testclient import TestClient
 from main import app, get_db
 
@@ -35,8 +36,12 @@ def test_client(override_get_db):
 @pytest.fixture
 def test_user(test_client):
     """Fixture om een testgebruiker aan te maken."""
-    response = test_client.post("/users", json={"username": "nieuwtest", "password": "test123"})
-    assert response.status_code == 200
+    # Genereer een unieke gebruikersnaam met timestamp
+    timestamp = int(time.time() * 1000)
+    unique_username = f"testuser_{timestamp}"
+    
+    response = test_client.post("/users", json={"username": unique_username, "password": "test123"})
+    assert response.status_code == 200, f"User creation failed: {response.text}"
     return response.json()
 
 @pytest.fixture
@@ -53,19 +58,25 @@ def test_weight(test_client, test_user):
 # Gebruikerstests
 def test_create_user(test_client):
     """Test voor het aanmaken van een gebruiker."""
-    response = test_client.post("/users", json={"username": "nieuwtest2", "password": "test123"})
+    timestamp = int(time.time() * 1000)
+    unique_username = f"testuser2_{timestamp}"
+    
+    response = test_client.post("/users", json={"username": unique_username, "password": "test123"})
     assert response.status_code == 200
     data = response.json()
     assert data["id"] > 0
-    assert data["username"] == "nieuwtest2"
+    assert data["username"] == unique_username
 
 def test_login(test_client, test_user):
     """Test voor inloggen met de juiste gegevens."""
-    response = test_client.post("/login", json={"username": "nieuwtest", "password": "test123"})
+    response = test_client.post("/login", json={
+        "username": test_user["username"], 
+        "password": "test123"
+    })
     assert response.status_code == 200, f"Login failed: {response.json()}"
     data = response.json()
     assert "id" in data
-    assert data["username"] == "nieuwtest"
+    assert data["username"] == test_user["username"]
 
 def test_invalid_login(test_client):
     """Test voor een foutieve login poging."""
@@ -78,7 +89,7 @@ def test_get_user(test_client, test_user):
     assert response.status_code == 200, f"Get user failed: {response.json()}"
     data = response.json()
     assert data["id"] == test_user["id"]
-    assert data["username"] == "nieuwtest"
+    assert data["username"] == test_user["username"]
 
 # Gewichtentests
 def test_create_weight(test_client, test_user):
