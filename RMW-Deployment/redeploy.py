@@ -64,80 +64,97 @@ async def redeploy(
         
         # 3. Update the service or deploy the stack
         if service == "monitoring":
-            # For monitoring, we use a special approach:
-            # Create a temporary directory to extract the monitoring files
-            with tempfile.TemporaryDirectory() as tmpdirname:
-                # Set proper permissions on the temporary directory
-                os.chmod(tmpdirname, 0o777)
-                print(f"Created temporary directory: {tmpdirname}")
+            # For monitoring, use direct Docker service commands instead of stack file
+            print("Deploying monitoring services using direct Docker service commands")
+
+            try:
+                # Create network if it doesn't exist
+                network_command = "docker network create --driver overlay rmw_monitoring_network || true"
+                subprocess.run(network_command, shell=True, check=False)
                 
-                # First, create a temporary container
-                create_command = f"docker create --name temp_monitoring {config['image']}"
-                subprocess.run(create_command, shell=True, check=True, capture_output=True, text=True)
+                # Define service commands for each monitoring component
+                services = [
+                    # Prometheus
+                    """docker service create --name rmw_monitoring_prometheus --network rmw_monitoring_network \
+                    --publish 9090:9090 --mount type=volume,source=prometheus_data,target=/prometheus \
+                    --constraint 'node.role==manager' \
+                    prom/prometheus:v2.36.2 \
+                    --storage.tsdb.path=/prometheus \
+                    --web.console.libraries=/usr/share/prometheus/console_libraries \
+                    --web.console.templates=/usr/share/prometheus/consoles \
+                    --web.enable-lifecycle""",
+                    
+                    # Node Exporter
+                    """docker service create --name rmw_monitoring_node-exporter --network rmw_monitoring_network \
+                    --publish 9100:9100 --mode global \
+                    --mount type=bind,source=/proc,target=/host/proc,readonly \
+                    --mount type=bind,source=/sys,target=/host/sys,readonly \
+                    --mount type=bind,source=/,target=/rootfs,readonly \
+                    quay.io/prometheus/node-exporter:latest \
+                    --path.procfs=/host/proc \
+                    --path.sysfs=/host/sys \
+                    --collector.filesystem.ignored-mount-points="^/(sys|proc|dev|host|etc|rootfs/var/lib/docker/containers|rootfs/var/lib/docker/overlay2|rootfs/run/docker/netns|rootfs/var/lib/docker/aufs)($$|/)" """,
+                    
+                    # cAdvisor
+                    """docker service create --name rmw_monitoring_cadvisor --network rmw_monitoring_network \
+                    --publish 8081:8080 --mode global \
+                    --mount type=bind,source=/,target=/rootfs,readonly \
+                    --mount type=bind,source=/var/run,target=/var/run \
+                    --mount type=bind,source=/sys,target=/sys,readonly \
+                    --mount type=bind,source=/var/lib/docker/,target=/var/lib/docker,readonly \
+                    gcr.io/cadvisor/cadvisor""",
+                    
+                    # Grafana
+                    """docker service create --name rmw_monitoring_grafana --network rmw_monitoring_network \
+                    --publish 3000:3000 --mount type=volume,source=grafana_data,target=/var/lib/grafana \
+                    --constraint 'node.role==manager' \
+                    -e GF_SECURITY_ADMIN_PASSWORD=foobar \
+                    -e GF_USERS_ALLOW_SIGN_UP=false \
+                    -e GF_AUTH_ANONYMOUS_ENABLED=true \
+                    -e GF_AUTH_ANONYMOUS_ORG_ROLE=Viewer \
+                    -e GF_INSTALL_PLUGINS=grafana-piechart-panel \
+                    grafana/grafana""",
+                    
+                    # Alertmanager
+                    """docker service create --name rmw_monitoring_alertmanager --network rmw_monitoring_network \
+                    --publish 9093:9093 --mount type=volume,source=alertmanager_data,target=/alertmanager \
+                    --constraint 'node.role==manager' \
+                    prom/alertmanager \
+                    --storage.path=/alertmanager"""
+                ]
                 
-                try:
-                    # Copy files from the container to the local filesystem
-                    copy_command = f"docker cp temp_monitoring:/app/monitoring/. {tmpdirname}"
-                    result_copy = subprocess.run(copy_command, shell=True, check=True, capture_output=True, text=True)
-                    print(f"Copy output: {result_copy.stdout}")
+                # For each service, try to create it, if it exists, update it
+                for service_cmd in services:
+                    service_name = service_cmd.split("--name ")[1].split(" ")[0]
+                    print(f"Deploying {service_name}")
                     
-                    # Debug: list the extracted files
-                    files = os.listdir(tmpdirname)
-                    print(f"Contents of extracted directory: {files}")
+                    # Check if service exists
+                    check_command = f"docker service inspect {service_name} > /dev/null 2>&1"
+                    exists = subprocess.run(check_command, shell=True).returncode == 0
                     
-                    # Check if docker-stack.yml exists in the extracted files
-                    if not os.path.exists(f"{tmpdirname}/docker-stack.yml"):
-                        raise HTTPException(
-                            status_code=500, 
-                            detail=f"docker-stack.yml file not found in the extracted monitoring files. Contents: {files}"
-                        )
-                    
-                    # Update the port for cadvisor from 8080 to 8081
-                    with open(f"{tmpdirname}/docker-stack.yml", 'r') as f:
-                        stack_content = f.read()
-                    
-                    # Update the port in the content
-                    updated_stack = stack_content.replace("- 8080:8080", "- 8081:8080")
-                    
-                    # Replace relative path bind mounts with named volumes
-                    # Replace "./prometheus:/etc/prometheus" style mounts with named volumes
-                    updated_stack = updated_stack.replace("- ./prometheus/:/etc/prometheus/", "- prometheus_data:/etc/prometheus/")
-                    
-                    # Replace any other problematic bind mounts
-                    updated_stack = updated_stack.replace("- ./alertmanager/:/etc/alertmanager/", "- alertmanager_data:/etc/alertmanager/")
-                    updated_stack = updated_stack.replace("- ./grafana/provisioning/:/etc/grafana/provisioning/", "- grafana_provisioning:/etc/grafana/provisioning/")
-                    
-                    # Add volume definitions if they don't exist
-                    if "alertmanager_data: {}" not in updated_stack:
-                        updated_stack = updated_stack.replace("volumes:", "volumes:\n    alertmanager_data: {}")
-                    
-                    if "grafana_provisioning: {}" not in updated_stack:
-                        updated_stack = updated_stack.replace("volumes:", "volumes:\n    grafana_provisioning: {}")
-                    
-                    # Write the updated stack file back
-                    with open(f"{tmpdirname}/docker-stack.yml", 'w') as f:
-                        f.write(updated_stack)
-                    
-                    print("Modified docker-stack.yml to use named volumes instead of bind mounts")
-                    
-                    # Make sure the stack file is readable
-                    os.chmod(f"{tmpdirname}/docker-stack.yml", 0o644)
-                    
-                    # Deploy the stack with the extracted files
-                    stack_command = f"cd {tmpdirname} && docker stack deploy -c docker-stack.yml {config['stack_name']} --with-registry-auth"
-                    result = subprocess.run(
-                        stack_command,
-                        shell=True,
-                        check=True,
-                        capture_output=True,
-                        text=True
-                    )
-                    
-                    return {"message": f"Redeployment triggered for stack: {service}", "output": result.stdout}
-                finally:
-                    # Clean up the temporary container
-                    rm_command = f"docker rm temp_monitoring"
-                    subprocess.run(rm_command, shell=True, check=False, capture_output=True, text=True)
+                    if exists:
+                        # Service exists, update it
+                        print(f"Service {service_name} exists, updating...")
+                        # Extract image name from the create command
+                        image_parts = service_cmd.split("\n")[-1].strip().split(" ")
+                        image = next((part for part in image_parts if ":" in part and not part.startswith("-")), None)
+                        if image:
+                            update_cmd = f"docker service update --with-registry-auth --image {image} {service_name}"
+                            print(f"Running: {update_cmd}")
+                            subprocess.run(update_cmd, shell=True, check=True)
+                        else:
+                            print(f"Could not extract image from command for {service_name}, skipping update")
+                    else:
+                        # Service doesn't exist, create it
+                        print(f"Service {service_name} doesn't exist, creating...")
+                        print(f"Running: {service_cmd}")
+                        subprocess.run(service_cmd, shell=True, check=True)
+                
+                return {"message": f"Redeployment triggered for services: monitoring", "output": "All monitoring services deployed successfully"}
+                
+            except subprocess.CalledProcessError as e:
+                error_message = e.stderr if hasattr(e, 'stderr') and e.stderr else str(e)
+                raise HTTPException(status_code=500, detail=f"Deployment failed: {error_message}")
         else:
             # For regular services
             update_command = (
