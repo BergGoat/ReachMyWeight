@@ -21,21 +21,21 @@ client = TestClient(app)
 # Testvolgorde: eerst gebruiker aanmaken, dan login testen
 def test_create_user():
     """Test voor het aanmaken van een gebruiker."""
-    response = client.post("/users", json={"username": "test", "password": "test123"})
+    response = client.post("/users", json={"username": "nieuwtest", "password": "test123"})
     assert response.status_code == 200
     data = response.json()
     assert data["id"] > 0
-    assert data["username"] == "test"
+    assert data["username"] == "test123"
 
 def test_login():
     """Test voor inloggen met de juiste gegevens."""
     test_create_user()  
 
-    response = client.post("/login", json={"username": "test", "password": "test123"})
+    response = client.post("/login", json={"username": "test123", "password": "test"})
     assert response.status_code == 200, f"Login failed: {response.json()}"
     data = response.json()
     assert "id" in data
-    assert data["username"] == "test"
+    assert data["username"] == "test123"
 
 def test_invalid_login():
     """Test voor een foutieve login poging."""
@@ -50,7 +50,7 @@ def test_get_user():
     assert response.status_code == 200, f"Get user failed: {response.json()}"
     data = response.json()
     assert data["id"] == 1
-    assert data["username"] == "test"
+    assert data["username"] == "test123"
 
 # Gewichtentests
 def test_create_weight():
