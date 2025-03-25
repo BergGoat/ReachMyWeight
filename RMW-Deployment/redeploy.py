@@ -135,9 +135,27 @@ async def redeploy(
                     if exists:
                         # Service exists, update it
                         print(f"Service {service_name} exists, updating...")
-                        # Extract image name from the create command
-                        image_parts = service_cmd.split("\n")[-1].strip().split(" ")
-                        image = next((part for part in image_parts if ":" in part and not part.startswith("-")), None)
+                        # Extract image name from the create command - fix the extraction logic
+                        if "prometheus" in service_name:
+                            image = "prom/prometheus:v2.36.2"
+                        elif "node-exporter" in service_name:
+                            image = "quay.io/prometheus/node-exporter:latest"
+                        elif "cadvisor" in service_name:
+                            image = "gcr.io/cadvisor/cadvisor"
+                        elif "grafana" in service_name:
+                            image = "grafana/grafana"
+                        elif "alertmanager" in service_name:
+                            image = "prom/alertmanager"
+                        else:
+                            # Fallback to the original extraction logic but with better filtering
+                            image_parts = service_cmd.split("\n")[-1].strip().split(" ")
+                            for part in image_parts:
+                                if "/" in part and ":" in part and not part.startswith("--") and not part.startswith("-"):
+                                    image = part
+                                    break
+                            else:
+                                image = None
+                            
                         if image:
                             update_cmd = f"docker service update --with-registry-auth --image {image} {service_name}"
                             print(f"Running: {update_cmd}")
