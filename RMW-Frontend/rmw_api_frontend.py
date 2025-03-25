@@ -33,8 +33,8 @@ templates = Jinja2Templates(directory="templates")
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
 # URL van de bestaande APIs
-ORIGINAL_API_URL = os.environ.get("ORIGINAL_API_URL", "http://Backend:8000")
-DATABASE_API_URL = os.environ.get("DATABASE_API_URL", "http://Database:8000")
+ORIGINAL_API_URL = os.environ.get("ORIGINAL_API_URL", "http://Backend:8001")
+DATABASE_API_URL = os.environ.get("DATABASE_API_URL", "http://Database:8002")
 
 # Functie om met de originele API te communiceren
 async def call_original_api(data: Dict[str, Any]) -> Dict[str, Any]:
