@@ -62,12 +62,12 @@ jobs:
           cache-to: type=gha,mode=max
 
       - name: Trigger Redeploy
-        id: trigger_redeploy
+        id: redeploy
         env:
           DEPLOY_API_KEY: ${{ secrets.DEPLOY_API_KEY }}
         run: |
           echo "Triggering redeploy..."
-          REDEPLOY_URL="http://188.166.89.152:8080/redeploy?api_key=${DEPLOY_API_KEY}&service=database"
+          REDEPLOY_URL="http://188.166.89.152:8080/redeploy?api_key=${DEPLOY_API_KEY}&service=database&skip_docker_login=true"
           redeploy_response=$(curl -s -X POST "$REDEPLOY_URL")
           echo "Redeploy response:"
           echo "$redeploy_response"
@@ -81,7 +81,7 @@ jobs:
 
       - name: Wait for Redeployment Completion
         run: |
-          if [ "${{ steps.trigger_redeploy.outputs.status }}" = "complete" ]; then
+          if [ "${{ steps.redeploy.outputs.status }}" = "complete" ]; then
             echo "Redeployment complete based on trigger message."
           else
             echo "Redeployment not complete. Exiting." && exit 1
