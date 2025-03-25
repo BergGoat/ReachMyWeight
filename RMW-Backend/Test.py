@@ -6,9 +6,9 @@ test_client = TestClient(app)
 
 # Test voor BMR-berekening
 def test_calculate_bmr():
-    assert calculate_bmr(70, 175, 25, "male") == 1673.75  # Correcte waarde!
+    assert calculate_bmr(70, 175, 25, "male") == 1673.75  
     assert calculate_bmr(60, 165, 30, "female") == 1366.25
-    with pytest.raises(ValueError):  # Controle op ongeldige genderwaarde
+    with pytest.raises(ValueError):  
         calculate_bmr(70, 175, 25, "unknown")
 
 # Test voor TDEE-berekening
