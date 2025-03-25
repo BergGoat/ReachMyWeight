@@ -71,195 +71,56 @@ async def redeploy(
                 os.chmod(tmpdirname, 0o777)
                 print(f"Created temporary directory: {tmpdirname}")
                 
-                # Create a simplified stack file directly
-                print("Creating simplified stack file with named volumes")
-                simplified_stack = """version: '3.7'
-
-volumes:
-    prometheus_data: {}
-    grafana_data: {}
-    alertmanager_data: {}
-
-networks:
-  monitor-net:
-
-services:
-  prometheus:
-    image: prom/prometheus:v2.36.2
-    volumes:
-      - ./prometheus:/etc/prometheus
-      - prometheus_data:/prometheus
-    command:
-      - '--config.file=/etc/prometheus/prometheus.yml'
-      - '--storage.tsdb.path=/prometheus'
-      - '--web.console.libraries=/usr/share/prometheus/console_libraries'
-      - '--web.console.templates=/usr/share/prometheus/consoles'
-    ports:
-      - 9090:9090
-    networks:
-      - monitor-net
-    deploy:
-      replicas: 1
-      restart_policy:
-        condition: on-failure
-
-  node-exporter:
-    image: quay.io/prometheus/node-exporter:latest
-    volumes:
-      - /proc:/host/proc:ro
-      - /sys:/host/sys:ro
-      - /:/rootfs:ro
-    command: 
-      - '--path.procfs=/host/proc' 
-      - '--path.sysfs=/host/sys'
-      - --collector.filesystem.ignored-mount-points
-      - "^/(sys|proc|dev|host|etc|rootfs/var/lib/docker/containers|rootfs/var/lib/docker/overlay2|rootfs/run/docker/netns|rootfs/var/lib/docker/aufs)($$|/)"
-    ports:
-      - 9100:9100
-    networks:
-      - monitor-net
-    deploy:
-      mode: global
-      restart_policy:
-        condition: on-failure
-
-  alertmanager:
-    image: prom/alertmanager
-    ports:
-      - 9093:9093
-    volumes:
-      - alertmanager_data:/alertmanager
-    networks:
-      - monitor-net
-    command:
-      - '--storage.path=/alertmanager'
-    deploy:
-      replicas: 1
-      restart_policy:
-        condition: on-failure    
-
-  cadvisor:
-    image: gcr.io/cadvisor/cadvisor
-    volumes:
-      - /:/rootfs:ro
-      - /var/run:/var/run:rw
-      - /sys:/sys:ro
-      - /var/lib/docker/:/var/lib/docker:ro
-    ports:
-      - 8081:8080
-    networks:
-      - monitor-net
-    deploy:
-      mode: global
-      restart_policy:
-        condition: on-failure
-
-  grafana:
-    image: grafana/grafana
-    depends_on:
-      - prometheus
-    ports:
-      - 3000:3000
-    volumes:
-      - grafana_data:/var/lib/grafana
-    environment:
-      - GF_SECURITY_ADMIN_PASSWORD=foobar
-      - GF_USERS_ALLOW_SIGN_UP=false
-    networks:
-      - monitor-net
-    deploy:
-      replicas: 1
-      restart_policy:
-        condition: on-failure
-"""
+                # First, create a temporary container
+                create_command = f"docker create --name temp_monitoring {config['image']}"
+                subprocess.run(create_command, shell=True, check=True, capture_output=True, text=True)
                 
-                # Create a basic prometheus configuration
-                os.makedirs(f"{tmpdirname}/prometheus", exist_ok=True)
-                prometheus_config = """
-global:
-  scrape_interval: 15s
-  evaluation_interval: 15s
-
-scrape_configs:
-  - job_name: 'prometheus'
-    static_configs:
-      - targets: ['localhost:9090']
-
-  - job_name: 'cadvisor'
-    static_configs:
-      - targets: ['cadvisor:8080']
-
-  - job_name: 'node-exporter'
-    static_configs:
-      - targets: ['node-exporter:9100']
-"""
-                with open(f"{tmpdirname}/prometheus/prometheus.yml", 'w') as f:
-                    f.write(prometheus_config)
-                
-                # Create Grafana provisioning folders
-                os.makedirs(f"{tmpdirname}/grafana/provisioning/dashboards", exist_ok=True)
-                os.makedirs(f"{tmpdirname}/grafana/provisioning/datasources", exist_ok=True)
-                
-                # Create datasource provisioning config
-                datasource_config = """
-apiVersion: 1
-
-datasources:
-  - name: Prometheus
-    type: prometheus
-    access: proxy
-    url: http://prometheus:9090
-    isDefault: true
-"""
-                with open(f"{tmpdirname}/grafana/provisioning/datasources/prometheus.yml", 'w') as f:
-                    f.write(datasource_config)
-                
-                # Create dashboard provisioning config
-                dashboard_config = """
-apiVersion: 1
-
-providers:
-  - name: 'default'
-    orgId: 1
-    folder: ''
-    type: file
-    disableDeletion: false
-    updateIntervalSeconds: 10
-    allowUiUpdates: true
-    options:
-      path: /etc/grafana/provisioning/dashboards
-      foldersFromFilesStructure: true
-"""
-                with open(f"{tmpdirname}/grafana/provisioning/dashboards/default.yml", 'w') as f:
-                    f.write(dashboard_config)
-                
-                # Update the Grafana service in the stack file to use the provisioning folders
-                simplified_stack = simplified_stack.replace(
-                    "  grafana:\n    image: grafana/grafana\n    depends_on:\n      - prometheus\n    ports:\n      - 3000:3000\n    volumes:\n      - grafana_data:/var/lib/grafana",
-                    "  grafana:\n    image: grafana/grafana\n    depends_on:\n      - prometheus\n    ports:\n      - 3000:3000\n    volumes:\n      - grafana_data:/var/lib/grafana\n      - ./grafana/provisioning:/etc/grafana/provisioning"
-                )
-                
-                # Write the updated stack file
-                stack_file_path = f"{tmpdirname}/docker-stack.yml"
-                with open(stack_file_path, 'w') as f:
-                    f.write(simplified_stack)
-                
-                print(f"Created stack file at {stack_file_path} with Grafana provisioning setup")
-                
-                # Make sure the stack file is readable
-                os.chmod(stack_file_path, 0o644)
-                
-                # Deploy the stack with the simplified file
-                stack_command = f"cd {tmpdirname} && docker stack deploy -c docker-stack.yml {config['stack_name']} --with-registry-auth"
-                result = subprocess.run(
-                    stack_command,
-                    shell=True,
-                    check=True,
-                    capture_output=True,
-                    text=True
-                )
-                
-                return {"message": f"Redeployment triggered for stack: {service}", "output": result.stdout}
+                try:
+                    # Copy files from the container to the local filesystem
+                    copy_command = f"docker cp temp_monitoring:/app/monitoring/. {tmpdirname}"
+                    result_copy = subprocess.run(copy_command, shell=True, check=True, capture_output=True, text=True)
+                    print(f"Copy output: {result_copy.stdout}")
+                    
+                    # Debug: list the extracted files
+                    files = os.listdir(tmpdirname)
+                    print(f"Contents of extracted directory: {files}")
+                    
+                    # Check if docker-stack.yml exists in the extracted files
+                    if not os.path.exists(f"{tmpdirname}/docker-stack.yml"):
+                        raise HTTPException(
+                            status_code=500, 
+                            detail=f"docker-stack.yml file not found in the extracted monitoring files. Contents: {files}"
+                        )
+                    
+                    # Update the port for cadvisor from 8080 to 8081
+                    with open(f"{tmpdirname}/docker-stack.yml", 'r') as f:
+                        stack_content = f.read()
+                    
+                    # Update the port in the content
+                    updated_stack = stack_content.replace("- 8080:8080", "- 8081:8080")
+                    
+                    # Write the updated stack file back
+                    with open(f"{tmpdirname}/docker-stack.yml", 'w') as f:
+                        f.write(updated_stack)
+                    
+                    # Make sure the stack file is readable
+                    os.chmod(f"{tmpdirname}/docker-stack.yml", 0o644)
+                    
+                    # Deploy the stack with the extracted files
+                    stack_command = f"cd {tmpdirname} && docker stack deploy -c docker-stack.yml {config['stack_name']} --with-registry-auth"
+                    result = subprocess.run(
+                        stack_command,
+                        shell=True,
+                        check=True,
+                        capture_output=True,
+                        text=True
+                    )
+                    
+                    return {"message": f"Redeployment triggered for stack: {service}", "output": result.stdout}
+                finally:
+                    # Clean up the temporary container
+                    rm_command = f"docker rm temp_monitoring"
+                    subprocess.run(rm_command, shell=True, check=False, capture_output=True, text=True)
         else:
             # For regular services
             update_command = (
