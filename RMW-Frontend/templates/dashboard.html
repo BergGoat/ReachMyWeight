@@ -62,9 +62,7 @@
                                         </div>
                                     </div>
                                     <div class="px-4 py-3 bg-gray-50 border-t border-gray-200">
-                                        <button class="text-xs text-blue-600 font-medium focus:outline-none hover:underline" 
-                                                onclick="toggleDetails('light-details')">Details tonen</button>
-                                        <div id="light-details" class="hidden mt-2 text-xs text-gray-600">
+                                        <div class="mt-2 text-xs text-gray-600">
                                             <div class="flex justify-between mb-1">
                                                 <span>TDEE:</span>
                                                 <span>{{ light_option.tdee|round }} kcal</span>
@@ -101,9 +99,7 @@
                                         </div>
                                     </div>
                                     <div class="px-4 py-3 bg-gray-50 border-t border-gray-200">
-                                        <button class="text-xs text-blue-600 font-medium focus:outline-none hover:underline" 
-                                                onclick="toggleDetails('standard-details')">Details tonen</button>
-                                        <div id="standard-details" class="hidden mt-2 text-xs text-gray-600">
+                                        <div class="mt-2 text-xs text-gray-600">
                                             <div class="flex justify-between mb-1">
                                                 <span>TDEE:</span>
                                                 <span>{{ standard_option.tdee|round }} kcal</span>
@@ -137,9 +133,7 @@
                                         </div>
                                     </div>
                                     <div class="px-4 py-3 bg-gray-50 border-t border-gray-200">
-                                        <button class="text-xs text-blue-600 font-medium focus:outline-none hover:underline" 
-                                                onclick="toggleDetails('intensive-details')">Details tonen</button>
-                                        <div id="intensive-details" class="hidden mt-2 text-xs text-gray-600">
+                                        <div class="mt-2 text-xs text-gray-600">
                                             <div class="flex justify-between mb-1">
                                                 <span>TDEE:</span>
                                                 <span>{{ intensive_option.tdee|round }} kcal</span>
@@ -154,43 +148,6 @@
                                             </div>
                                         </div>
                                     </div>
-                                </div>
-                            </div>
-                            
-                            <!-- Sport specific results -->
-                            <div class="mt-8">
-                                <h3 class="text-lg font-medium text-gray-800 mb-3">Details per sport</h3>
-                                <div class="bg-white shadow overflow-hidden border border-gray-200 sm:rounded-lg">
-                                    <table class="min-w-full divide-y divide-gray-200">
-                                        <thead class="bg-gray-50">
-                                            <tr>
-                                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                                    Sport
-                                                </th>
-                                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                                    Calorieën/dag
-                                                </th>
-                                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                                    Tijd tot doel
-                                                </th>
-                                            </tr>
-                                        </thead>
-                                        <tbody class="bg-white divide-y divide-gray-200">
-                                            {% for result in detailed_results %}
-                                            <tr>
-                                                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                                                    {{ result.sport }}
-                                                </td>
-                                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                                    {{ result.calorie_adjustment }} kcal
-                                                </td>
-                                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                                    {{ result.time_to_reach_goal|round(1) }} dagen
-                                                </td>
-                                            </tr>
-                                            {% endfor %}
-                                        </tbody>
-                                    </table>
                                 </div>
                             </div>
                         </div>
@@ -273,16 +230,6 @@
                                     }
                                 });
                             });
-                            
-                            // Function to toggle details sections
-                            function toggleDetails(id) {
-                                const detailsElement = document.getElementById(id);
-                                if (detailsElement.classList.contains('hidden')) {
-                                    detailsElement.classList.remove('hidden');
-                                } else {
-                                    detailsElement.classList.add('hidden');
-                                }
-                            }
                         </script>
                         {% else %}
                         <div class="p-6 text-center">
