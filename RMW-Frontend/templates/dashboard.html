@@ -42,10 +42,122 @@
                             <input type="number" step="0.1" id="weight" name="weight" required
                                 class="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
                         </div>
+<<<<<<< Updated upstream
                         <div>
                             <label for="goal_weight" class="block text-sm font-medium text-gray-700 mb-1">Doel Gewicht (kg)</label>
                             <input type="number" step="0.1" id="goal_weight" name="goal_weight" required
                                 class="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+=======
+                        
+                        <div class="p-6">
+                            <!-- Calorie deficit option comparison -->
+                            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                                <!-- Light deficit option -->
+                                <div class="border border-gray-200 rounded-lg overflow-hidden">
+                                    <div class="bg-blue-50 px-4 py-3 border-b border-gray-200">
+                                        <h3 class="text-md font-medium text-gray-900">Licht tempo</h3>
+                                        <p class="text-xs text-gray-500">250 kcal per dag</p>
+                                    </div>
+                                    <div class="p-4">
+                                        <div class="text-center mb-4">
+                                            <div class="text-3xl font-bold text-blue-600">{{ light_option.days|round(1) }}</div>
+                                            <div class="text-sm text-gray-500">dagen</div>
+                                        </div>
+                                        <div class="flex justify-between text-sm border-t border-gray-100 pt-3">
+                                            <span class="text-gray-500">{{ (light_option.days / 7)|round(1) }} weken</span>
+                                            <span class="text-gray-500">{{ (light_option.days / 30)|round(1) }} maanden</span>
+                                        </div>
+                                    </div>
+                                    <div class="px-4 py-3 bg-gray-50 border-t border-gray-200">
+                                        <div class="mt-2 text-xs text-gray-600">
+                                            <div class="flex justify-between mb-1">
+                                                <span>TDEE:</span>
+                                                <span>{{ light_option.tdee|round }} kcal</span>
+                                            </div>
+                                            <div class="flex justify-between mb-1">
+                                                <span>Dagelijkse calorie-inname:</span>
+                                                <span>{{ (light_option.tdee - 250)|round }} kcal</span>
+                                            </div>
+                                            <div class="flex justify-between">
+                                                <span>Totaal te verliezen:</span>
+                                                <span>{{ calculation_results.weight_difference }} kg</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Standard deficit option -->
+                                <div class="border-2 border-blue-500 rounded-lg overflow-hidden shadow-md">
+                                    <div class="bg-blue-100 px-4 py-3 border-b border-blue-200 relative">
+                                        <div class="absolute top-0 right-0 bg-blue-500 text-white text-xs px-2 py-1 rounded-bl">
+                                            Aanbevolen
+                                        </div>
+                                        <h3 class="text-md font-medium text-gray-900">Normaal tempo</h3>
+                                        <p class="text-xs text-gray-500">500 kcal per dag</p>
+                                    </div>
+                                    <div class="p-4">
+                                        <div class="text-center mb-4">
+                                            <div class="text-3xl font-bold text-blue-600">{{ standard_option.days|round(1) }}</div>
+                                            <div class="text-sm text-gray-500">dagen</div>
+                                        </div>
+                                        <div class="flex justify-between text-sm border-t border-gray-100 pt-3">
+                                            <span class="text-gray-500">{{ (standard_option.days / 7)|round(1) }} weken</span>
+                                            <span class="text-gray-500">{{ (standard_option.days / 30)|round(1) }} maanden</span>
+                                        </div>
+                                    </div>
+                                    <div class="px-4 py-3 bg-gray-50 border-t border-gray-200">
+                                        <div class="mt-2 text-xs text-gray-600">
+                                            <div class="flex justify-between mb-1">
+                                                <span>TDEE:</span>
+                                                <span>{{ standard_option.tdee|round }} kcal</span>
+                                            </div>
+                                            <div class="flex justify-between mb-1">
+                                                <span>Dagelijkse calorie-inname:</span>
+                                                <span>{{ (standard_option.tdee - 500)|round }} kcal</span>
+                                            </div>
+                                            <div class="flex justify-between">
+                                                <span>Totaal te verliezen:</span>
+                                                <span>{{ calculation_results.weight_difference }} kg</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Intensive deficit option -->
+                                <div class="border border-gray-200 rounded-lg overflow-hidden">
+                                    <div class="bg-blue-50 px-4 py-3 border-b border-gray-200">
+                                        <h3 class="text-md font-medium text-gray-900">Intensief tempo</h3>
+                                        <p class="text-xs text-gray-500">1000 kcal per dag</p>
+                                    </div>
+                                    <div class="p-4">
+                                        <div class="text-center mb-4">
+                                            <div class="text-3xl font-bold text-blue-600">{{ intensive_option.days|round(1) }}</div>
+                                            <div class="text-sm text-gray-500">dagen</div>
+                                        </div>
+                                        <div class="flex justify-between text-sm border-t border-gray-100 pt-3">
+                                            <span class="text-gray-500">{{ (intensive_option.days / 7)|round(1) }} weken</span>
+                                            <span class="text-gray-500">{{ (intensive_option.days / 30)|round(1) }} maanden</span>
+                                        </div>
+                                    </div>
+                                    <div class="px-4 py-3 bg-gray-50 border-t border-gray-200">
+                                        <div class="mt-2 text-xs text-gray-600">
+                                            <div class="flex justify-between mb-1">
+                                                <span>TDEE:</span>
+                                                <span>{{ intensive_option.tdee|round }} kcal</span>
+                                            </div>
+                                            <div class="flex justify-between mb-1">
+                                                <span>Dagelijkse calorie-inname:</span>
+                                                <span>{{ (intensive_option.tdee - 1000)|round }} kcal</span>
+                                            </div>
+                                            <div class="flex justify-between">
+                                                <span>Totaal te verliezen:</span>
+                                                <span>{{ calculation_results.weight_difference }} kg</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+>>>>>>> Stashed changes
                         </div>
                         <button type="submit"
                             class="w-full bg-blue-500 hover:bg-blue-600 text-white font-medium py-2 px-4 rounded-md transition duration-300">
@@ -76,12 +188,97 @@
                     </div>
                     {% endif %}
                     
+<<<<<<< Updated upstream
                     <!-- Kleine uitleg over het algoritme -->
                     <div class="mt-4 bg-blue-50 p-4 rounded-md border border-blue-100">
                         <h4 class="font-medium text-blue-800 mb-1">Over ons algoritme</h4>
                         <p class="text-sm text-gray-600">
                             Ons O(n²) algoritme berekent de optimale tijd om je doel te bereiken op basis van je huidige gewicht en streefgewicht.
                         </p>
+=======
+                    <div class="bg-white rounded-lg shadow">
+                        <div class="px-6 py-4 border-b border-gray-200">
+                            <h2 class="text-xl font-semibold text-gray-800">Gewicht metingen</h2>
+                        </div>
+                        
+                        {% if entries and entries|length > 0 %}
+                        <div class="p-6">
+                            <div class="h-64 mb-6">
+                                <canvas id="weightChart"></canvas>
+                            </div>
+                            
+                            <div class="overflow-x-auto">
+                                <table class="min-w-full divide-y divide-gray-200">
+                                    <thead>
+                                        <tr>
+                                            <th class="px-6 py-3 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Datum</th>
+                                            <th class="px-6 py-3 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Gewicht (kg)</th>
+                                            <th class="px-6 py-3 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Doel (kg)</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody class="bg-white divide-y divide-gray-200">
+                                        {% for entry in entries %}
+                                        <tr>
+                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ entry.date }}</td>
+                                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{{ entry.weight }}</td>
+                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ entry.goal_weight }}</td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                        <script>
+                            document.addEventListener('DOMContentLoaded', function() {
+                                const ctx = document.getElementById('weightChart').getContext('2d');
+                                
+                                // Extract data from entries
+                                const dates = [{% for entry in entries %}'{{ entry.date }}'{% if not loop.last %}, {% endif %}{% endfor %}];
+                                const weights = [{% for entry in entries %}{{ entry.weight }}{% if not loop.last %}, {% endif %}{% endfor %}];
+                                const goals = [{% for entry in entries %}{{ entry.goal_weight }}{% if not loop.last %}, {% endif %}{% endfor %}];
+                                
+                                // Create chart
+                                const chart = new Chart(ctx, {
+                                    type: 'line',
+                                    data: {
+                                        labels: dates.reverse(),
+                                        datasets: [
+                                            {
+                                                label: 'Gewicht (kg)',
+                                                data: weights.slice().reverse(),
+                                                borderColor: '#3b82f6',
+                                                backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                                                tension: 0.4,
+                                                fill: true
+                                            },
+                                            {
+                                                label: 'Doel (kg)',
+                                                data: goals.slice().reverse(),
+                                                borderColor: '#f59e0b',
+                                                backgroundColor: 'transparent',
+                                                borderDash: [5, 5],
+                                                tension: 0
+                                            }
+                                        ]
+                                    },
+                                    options: {
+                                        responsive: true,
+                                        maintainAspectRatio: false,
+                                        scales: {
+                                            y: {
+                                                beginAtZero: false
+                                            }
+                                        }
+                                    }
+                                });
+                            });
+                        </script>
+                        {% else %}
+                        <div class="p-6 text-center">
+                            <p class="text-gray-500">Nog geen gegevens beschikbaar. <a href="/entry" class="text-blue-500 hover:underline">Voer uw eerste meting in</a>.</p>
+                        </div>
+                        {% endif %}
+>>>>>>> Stashed changes
                     </div>
                 </div>
             </div>
