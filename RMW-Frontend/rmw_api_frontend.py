@@ -623,10 +623,10 @@ async def handle_register(
         # Profiel toevoegen via de database API
         await call_database_api("POST", "/api/profiles", profile_data)
         
-        # Stuur door naar login pagina met succes bericht
-        return templates.TemplateResponse(
-            "login.html", 
-            {"request": request, "success": "Account succesvol aangemaakt! Log nu in."}
+        # Redirect naar login pagina met succes parameter
+        return RedirectResponse(
+            url="/login?success=Account%20succesvol%20aangemaakt!%20Log%20nu%20in.",
+            status_code=status.HTTP_303_SEE_OTHER
         )
         
     except HTTPException as e:
