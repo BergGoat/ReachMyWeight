@@ -68,35 +68,41 @@ async def redeploy(
             # Create a temporary directory to extract the monitoring files
             with tempfile.TemporaryDirectory() as tmpdirname:
                 # Set proper permissions on the temporary directory
-                os.chmod(tmpdirname, 0o755)
+                os.chmod(tmpdirname, 0o777)
+                print(f"Created temporary directory: {tmpdirname}")
                 
-                # First, try to list the contents of the container
-                list_command = f"docker run --rm {config['image']} ls -la /app/monitoring"
-                result_list = subprocess.run(list_command, shell=True, check=True, capture_output=True, text=True)
-                print(f"Container contents: {result_list.stdout}")
-                
-                # Run a container with the monitoring image, mounting the temp directory
-                extract_command = f"docker run --rm -v {tmpdirname}:/target --user root {config['image']} /bin/sh -c 'mkdir -p /target && echo \"Source directory contents:\" && ls -la /app/monitoring && echo \"Copying files...\" && cp -rv /app/monitoring/* /target/ && echo \"Target directory contents:\" && ls -la /target && echo \"Setting permissions...\" && chown -R 1000:1000 /target && chmod -R 755 /target'"
-                result_extract = subprocess.run(extract_command, shell=True, check=True, capture_output=True, text=True)
-                print(f"Extraction output: {result_extract.stdout}")
-                
-                # Debug: list the extracted files
-                print(f"Contents of extracted directory: {os.listdir(tmpdirname)}")
+                # Try to extract files using docker cp
+                try:
+                    # First, create a temporary container
+                    create_command = f"docker create --name temp_monitoring {config['image']}"
+                    subprocess.run(create_command, shell=True, check=True, capture_output=True, text=True)
+                    
+                    # Copy files from the container to the local filesystem
+                    copy_command = f"docker cp temp_monitoring:/app/monitoring/. {tmpdirname}"
+                    result_copy = subprocess.run(copy_command, shell=True, check=True, capture_output=True, text=True)
+                    print(f"Copy output: {result_copy.stdout}")
+                    
+                    # Debug: list the extracted files
+                    files = os.listdir(tmpdirname)
+                    print(f"Contents of extracted directory: {files}")
+                    
+                    # Remove the temporary container
+                    rm_command = f"docker rm temp_monitoring"
+                    subprocess.run(rm_command, shell=True, check=False, capture_output=True, text=True)
+                except Exception as e:
+                    print(f"Error during extraction: {str(e)}")
+                    print("Using embedded stack file as fallback")
+                    # Copy the embedded docker-stack.yml file to the temp directory
+                    shutil.copy("/app/monitoring_files/docker-stack.yml", f"{tmpdirname}/docker-stack.yml")
+                    files = os.listdir(tmpdirname)
+                    print(f"Contents of extracted directory after fallback: {files}")
                 
                 # Check if docker-stack.yml exists in the extracted files
                 if not os.path.exists(f"{tmpdirname}/docker-stack.yml"):
-                    # Try to find the file with a different case
-                    files = os.listdir(tmpdirname)
-                    stack_file = next((f for f in files if f.lower() == 'docker-stack.yml'), None)
-                    if stack_file:
-                        # Rename the file to the correct case
-                        os.rename(f"{tmpdirname}/{stack_file}", f"{tmpdirname}/docker-stack.yml")
-                    else:
-                        raise HTTPException(
-                            status_code=500, 
-                            detail=f"docker-stack.yml file not found in the extracted monitoring files. Contents: {files}"
-                        )
-                
+                    # Use embedded stack file as fallback
+                    print("docker-stack.yml not found, using embedded file as fallback")
+                    shutil.copy("/app/monitoring_files/docker-stack.yml", f"{tmpdirname}/docker-stack.yml")
+                    
                 # Make sure the stack file is readable
                 os.chmod(f"{tmpdirname}/docker-stack.yml", 0o644)
                 
@@ -110,7 +116,7 @@ async def redeploy(
                     text=True
                 )
                 
-            return {"message": f"Redeployment triggered for stack: {service}", "output": result.stdout}
+                return {"message": f"Redeployment triggered for stack: {service}", "output": result.stdout}
         else:
             # For regular services
             update_command = (
