@@ -99,9 +99,26 @@ async def redeploy(
                     # Update the port in the content
                     updated_stack = stack_content.replace("- 8080:8080", "- 8081:8080")
                     
+                    # Replace relative path bind mounts with named volumes
+                    # Replace "./prometheus:/etc/prometheus" style mounts with named volumes
+                    updated_stack = updated_stack.replace("- ./prometheus/:/etc/prometheus/", "- prometheus_data:/etc/prometheus/")
+                    
+                    # Replace any other problematic bind mounts
+                    updated_stack = updated_stack.replace("- ./alertmanager/:/etc/alertmanager/", "- alertmanager_data:/etc/alertmanager/")
+                    updated_stack = updated_stack.replace("- ./grafana/provisioning/:/etc/grafana/provisioning/", "- grafana_provisioning:/etc/grafana/provisioning/")
+                    
+                    # Add volume definitions if they don't exist
+                    if "alertmanager_data: {}" not in updated_stack:
+                        updated_stack = updated_stack.replace("volumes:", "volumes:\n    alertmanager_data: {}")
+                    
+                    if "grafana_provisioning: {}" not in updated_stack:
+                        updated_stack = updated_stack.replace("volumes:", "volumes:\n    grafana_provisioning: {}")
+                    
                     # Write the updated stack file back
                     with open(f"{tmpdirname}/docker-stack.yml", 'w') as f:
                         f.write(updated_stack)
+                    
+                    print("Modified docker-stack.yml to use named volumes instead of bind mounts")
                     
                     # Make sure the stack file is readable
                     os.chmod(f"{tmpdirname}/docker-stack.yml", 0o644)
