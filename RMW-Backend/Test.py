@@ -5,8 +5,8 @@ from main import app, calculate_bmr, calculate_tdee, calculate_time
 test_client = TestClient(app)
 
 def test_calculate_bmr():
-    assert calculate_bmr(70, 175, 25, "male") == 1703.75
-    assert calculate_bmr(60, 165, 30, "female") == 1366.25
+    assert calculate_bmr(70, 175, 25, "male") == 1673.75
+    assert calculate_bmr(60, 165, 30, "female") == 1320.25
     with pytest.raises(ValueError):
         calculate_bmr(70, 175, 25, "unknown")
 
