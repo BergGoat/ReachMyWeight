@@ -8,8 +8,8 @@ app = FastAPI()
 DEPLOY_API_KEY = os.environ.get("DEPLOY_API_KEY", "Belastingdienst321!")
 
 # Docker Hub credentials from environment
-DOCKER_USERNAME = os.environ.get("DOCKER_USERNAME", "steelduck1")
-DOCKER_PASSWORD = os.environ.get("DOCKER_PASSWORD", "dckr_pat_TpcaLQTc0H7-1P_yi2JN54qoqnY")
+DOCKER_USERNAME = os.environ.get("DOCKER_USERNAME")
+DOCKER_PASSWORD = os.environ.get("DOCKER_PASSWORD")
 
 # Service configuration mapping
 SERVICE_CONFIG = {
