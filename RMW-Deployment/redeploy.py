@@ -5,11 +5,7 @@ import os
 app = FastAPI()
 
 # Get API key from the environment
-DEPLOY_API_KEY = os.environ.get("DEPLOY_API_KEY", "Belastingdienst321!")
-
-# Docker Hub credentials from environment
-DOCKER_USERNAME = os.environ.get("DOCKER_USERNAME")
-DOCKER_PASSWORD = os.environ.get("DOCKER_PASSWORD")
+DEPLOY_API_KEY = os.environ.get("DEPLOY_API_KEY")
 
 # Service configuration mapping
 SERVICE_CONFIG = {
@@ -56,24 +52,23 @@ async def redeploy(
     api_key: str,
     service: str = Query(None, description="Specific service to update (frontend, backend, database, deployment, prometheus, grafana, node-exporter, alertmanager, cadvisor)")
 ):
-    if api_key != DEPLOY_API_KEY:
+    if not DEPLOY_API_KEY or api_key != DEPLOY_API_KEY:
         raise HTTPException(status_code=401, detail="Invalid API key")
     
     if not service or service not in SERVICE_CONFIG:
-        raise HTTPException(status_code=400, detail="Invalid or missing service parameter. Must be one of: frontend, backend, database, deployment, prometheus, grafana, node-exporter, alertmanager, cadvisor")
+        services_list = ", ".join(SERVICE_CONFIG.keys())
+        raise HTTPException(status_code=400, detail=f"Invalid or missing service parameter. Must be one of: {services_list}")
     
     config = SERVICE_CONFIG[service]
     
     try:
-        # 1. Log in to Docker Hub
-        login_command = f"echo {DOCKER_PASSWORD} | docker login --username {DOCKER_USERNAME} --password-stdin"
-        subprocess.run(login_command, shell=True, check=True)
-        
-        # 2. Pull the latest image
+        # Pull the latest image
+        print(f"Pulling latest image for {service}...")
         pull_command = f"docker pull {config['image']}"
         subprocess.run(pull_command, shell=True, check=True)
         
-        # 3. Update the service with the new image
+        # Update the service with the new image
+        print(f"Updating service {config['service_name']}...")
         update_command = (
             f"docker service update --with-registry-auth "
             f"--image {config['image']} {config['service_name']} "

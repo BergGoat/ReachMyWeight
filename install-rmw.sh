@@ -6,18 +6,9 @@ set -e
 
 echo "🚀 Setting up ReachMyWeight stack with advanced monitoring..."
 
-# Ask for credentials if not provided as environment variables
+# Ask for deployment API key
 if [ -z "$DEPLOY_API_KEY" ]; then
-    read -sp "Enter Deployment API Key: " DEPLOY_API_KEY
-    echo ""
-fi
-
-if [ -z "$DOCKER_USERNAME" ]; then
-    read -p "Enter Docker Hub Username: " DOCKER_USERNAME
-fi
-
-if [ -z "$DOCKER_PASSWORD" ]; then
-    read -sp "Enter Docker Hub Password/Token: " DOCKER_PASSWORD
+    read -sp "Enter Deployment API Key (for redeploy endpoint): " DEPLOY_API_KEY
     echo ""
 fi
 
@@ -68,12 +59,10 @@ GF_USERS_ALLOW_SIGN_UP=false
 EOF
 fi
 
-# Create/update environment file for deployment service
+# Create/update environment file for deployment service (API key only)
 echo "📝 Creating deployment environment file..."
 cat > RMW-Deployment/.env.deployment << EOF
 DEPLOY_API_KEY=$DEPLOY_API_KEY
-DOCKER_USERNAME=$DOCKER_USERNAME
-DOCKER_PASSWORD=$DOCKER_PASSWORD
 EOF
 
 # Update network name in the monitoring stack if needed
