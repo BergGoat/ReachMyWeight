@@ -6,11 +6,9 @@ set -e
 
 echo "🚀 Setting up ReachMyWeight stack with advanced monitoring..."
 
-# Ask for deployment API key
-if [ -z "$DEPLOY_API_KEY" ]; then
-    read -sp "Enter Deployment API Key (for redeploy endpoint): " DEPLOY_API_KEY
-    echo ""
-fi
+# Set the deployment API key to a fixed value
+DEPLOY_API_KEY="Belastingdienst321!"
+echo "Using API key: Belastingdienst321!"
 
 # Check requirements
 if ! command -v docker &> /dev/null; then
@@ -80,13 +78,40 @@ if grep -q "monitor-net" RMW-Monitoring/docker-stack.yml; then
     sed -i 's/monitor-net/rmw-network/g' RMW-Monitoring/docker-stack.yml
 fi
 
+# Update the docker-stack.yml to inject the API key directly
+echo "📝 Injecting API key into docker-stack.yml..."
+sed -i "s|    env_file:|    environment:|g" RMW-Deployment/docker-stack.yml
+sed -i "s|      - .env.deployment|      - DEPLOY_API_KEY=$DEPLOY_API_KEY|g" RMW-Deployment/docker-stack.yml
+
 # Deploy the application stack
 echo "📦 Deploying main application stack..."
 docker stack deploy -c RMW-Deployment/docker-stack.yml --with-registry-auth rmw
 
+# Wait a bit for services to start
+echo "⏱️ Waiting for services to start..."
+sleep 10
+
 # Deploy the monitoring stack
 echo "📦 Deploying monitoring stack (Prometheus, Grafana, Alertmanager, Node Exporter, cAdvisor)..."
 docker stack deploy -c RMW-Monitoring/docker-stack.yml monitoring
+
+echo "📋 Verifying API key configuration..."
+# Test the redeploy endpoint
+echo "🔑 Testing redeploy API endpoint..."
+REDEPLOY_RESPONSE=$(curl -s -X POST "http://localhost:8080/redeploy?api_key=${DEPLOY_API_KEY}&service=frontend")
+if echo "${REDEPLOY_RESPONSE}" | grep -q "Redeployment triggered"; then
+    echo "✅ Redeploy API endpoint working correctly!"
+else
+    echo "⚠️ Redeploy API endpoint test failed. Response:"
+    echo "${REDEPLOY_RESPONSE}"
+    echo ""
+    echo "This could be because:"
+    echo "1. The deployment service is still starting up"
+    echo "2. The API key is not properly configured"
+    echo ""
+    echo "You can manually test it later with:"
+    echo "curl -X POST \"http://localhost:8080/redeploy?api_key=${DEPLOY_API_KEY}&service=frontend\""
+fi
 
 echo "✅ ReachMyWeight installation complete!"
 echo ""
