@@ -35,6 +35,33 @@ else
     git pull
 fi
 
+# Check for existing stacks and remove them to ensure clean installation
+echo "🔍 Checking for existing stacks..."
+
+# Remove monitoring stack if it exists
+if docker stack ls | grep -q "monitoring"; then
+    echo "🧹 Removing existing monitoring stack..."
+    docker stack rm monitoring
+fi
+
+# Remove rmw stack if it exists
+if docker stack ls | grep -q "rmw"; then
+    echo "🧹 Removing existing rmw stack..."
+    docker stack rm rmw
+fi
+
+# Wait for stacks to be fully removed
+echo "⏱️ Waiting for stacks to be fully removed..."
+sleep 20
+
+# Clean up all volumes related to the stacks
+echo "🧹 Cleaning up all related volumes..."
+# Find and remove any matching volumes
+for vol in $(docker volume ls --format "{{.Name}}" | grep -E 'monitoring_|rmw_|grafana_data|prometheus_data'); do
+    echo "  Removing volume: $vol"
+    docker volume rm $vol || true
+done
+
 # Create external network if it doesn't exist
 if ! docker network ls | grep -q "rmw-network"; then
     echo "🌐 Creating rmw-network..."
@@ -72,7 +99,7 @@ echo "Deployment Service: http://localhost:8080"
 echo ""
 echo "Monitoring:"
 echo "----------"
-echo "Grafana: http://localhost:3000 (admin/foobar)"
+echo "Grafana: http://localhost:3000 (admin/admin)"
 echo "Prometheus: http://localhost:9090"
 echo "AlertManager: http://localhost:9093"
 echo "cAdvisor: http://localhost:8082"
