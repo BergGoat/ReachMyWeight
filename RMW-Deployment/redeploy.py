@@ -27,23 +27,23 @@ SERVICE_CONFIG = {
     },
     "prometheus": {
         "image": "prom/prometheus:latest",
-        "service_name": "rmw_prometheus"
+        "service_name": "monitoring_prometheus"
     },
     "grafana": {
         "image": "grafana/grafana:latest",
-        "service_name": "rmw_grafana"
+        "service_name": "monitoring_grafana"
     },
     "node-exporter": {
         "image": "prom/node-exporter:latest",
-        "service_name": "rmw_node-exporter"
+        "service_name": "monitoring_node-exporter"
     },
     "alertmanager": {
         "image": "prom/alertmanager:latest",
-        "service_name": "rmw_alertmanager"
+        "service_name": "monitoring_alertmanager"
     },
     "cadvisor": {
         "image": "gcr.io/cadvisor/cadvisor:latest",
-        "service_name": "rmw_cadvisor"
+        "service_name": "monitoring_cadvisor"
     }
 }
 
