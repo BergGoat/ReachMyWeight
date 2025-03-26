@@ -1,6 +1,7 @@
 from fastapi import FastAPI, HTTPException, Query
 import subprocess
 import os
+import time
 
 app = FastAPI()
 
@@ -44,6 +45,10 @@ SERVICE_CONFIG = {
     "cadvisor": {
         "image": "gcr.io/cadvisor/cadvisor:latest",
         "service_name": "monitoring_cadvisor"
+    },
+    "monitoring-full": {
+        "image": "none",
+        "service_name": "monitoring"
     }
 }
 
@@ -64,8 +69,66 @@ async def redeploy(
     try:
         # Pull the latest image
         print(f"Pulling latest image for {service}...")
+        
+        # Special handling for full monitoring redeployment
+        if service == "monitoring-full":
+            print("Using special handler for complete monitoring stack redeployment...")
+            
+            # 1. Remove the existing stack
+            print("Removing existing monitoring stack...")
+            remove_cmd = "docker stack rm monitoring"
+            subprocess.run(remove_cmd, shell=True, check=True)
+            
+            # 2. Wait for stack to be fully removed
+            print("Waiting for monitoring stack to be fully removed...")
+            time.sleep(15)
+            
+            # 3. Clean up all related volumes
+            print("Cleaning up all monitoring volumes...")
+            clean_cmd = "for vol in $(docker volume ls --format \"{{.Name}}\" | grep -E 'monitoring_|prometheus_data|grafana_data'); do docker volume rm $vol || true; done"
+            subprocess.run(clean_cmd, shell=True, check=True)
+            
+            # 4. Update only RMW-Monitoring folder via sparse checkout
+            print("Updating RMW-Monitoring configurations...")
+            repo_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+            monitoring_dir = os.path.join(repo_dir, "RMW-Monitoring")
+            
+            # Remove old monitoring directory if it exists
+            if os.path.exists(monitoring_dir):
+                rm_cmd = f"rm -rf {monitoring_dir}"
+                subprocess.run(rm_cmd, shell=True, check=True)
+            
+            # Create sparse checkout for just RMW-Monitoring folder
+            clone_cmd = f"""
+            cd {repo_dir} && \
+            git remote update && \
+            git checkout main && \
+            mkdir -p RMW-Monitoring && \
+            git checkout main -- RMW-Monitoring
+            """
+            subprocess.run(clone_cmd, shell=True, check=True)
+            
+            # 5. Create network if needed
+            print("Ensuring network exists...")
+            net_cmd = "docker network create --driver overlay rmw-network || true"
+            subprocess.run(net_cmd, shell=True, check=True)
+            
+            # 6. Update network name if needed
+            print("Updating network configuration if needed...")
+            sed_cmd = f"cd {repo_dir} && if grep -q 'monitor-net' RMW-Monitoring/docker-stack.yml; then sed -i 's/monitor-net/rmw-network/g' RMW-Monitoring/docker-stack.yml; fi"
+            subprocess.run(sed_cmd, shell=True, check=True)
+            
+            # 7. Deploy the monitoring stack
+            print("Deploying fresh monitoring stack...")
+            deploy_cmd = f"cd {repo_dir} && docker stack deploy -c RMW-Monitoring/docker-stack.yml monitoring"
+            result = subprocess.run(deploy_cmd, shell=True, check=True, capture_output=True, text=True)
+            
+            return {"message": "Complete monitoring stack redeployment successful", "output": result.stdout}
+        
+        # For all other services, continue with normal flow
         pull_command = f"docker pull {config['image']}"
-        subprocess.run(pull_command, shell=True, check=True)
+        if service != "monitoring-full":  # Skip for monitoring-full since it doesn't have a real image
+            subprocess.run(pull_command, shell=True, check=True)
         
         # Update the service with the new image
         print(f"Updating service {config['service_name']}...")

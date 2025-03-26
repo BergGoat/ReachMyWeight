@@ -19,8 +19,6 @@ jobs:
     environment: docker
     env:
       REGISTRY: docker.io
-      # Note: This is blank as we're not building a custom image, using official images instead
-      IMAGE_NAME: "" 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
@@ -31,110 +29,23 @@ jobs:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
       
-      # No build step as we're using official images
-
-      - name: Trigger Prometheus Redeploy
-        id: trigger_prometheus_redeploy
+      - name: Deploy Complete Monitoring Stack
         env:
           DEPLOY_API_KEY: ${{ secrets.DEPLOY_API_KEY }}
         run: |
-          echo "Triggering Prometheus redeploy..."
-          REDEPLOY_URL="http://188.166.89.152:8080/redeploy?api_key=${DEPLOY_API_KEY}&service=prometheus"
-          redeploy_response=$(curl -s -X POST "$REDEPLOY_URL")
-          echo "Redeploy response:"
-          echo "$redeploy_response"
-          if echo "$redeploy_response" | grep -q "Redeployment triggered"; then
-            echo "Prometheus redeployment triggered."
-            echo "status=complete" >> $GITHUB_OUTPUT
+          echo "Triggering complete monitoring stack redeployment..."
+          REDEPLOY_URL="http://188.166.89.152:8080/redeploy?api_key=${DEPLOY_API_KEY}&service=monitoring-full"
+          
+          # Call the redeploy endpoint
+          echo "Calling redeploy endpoint..."
+          RESPONSE=$(curl -s -X POST "$REDEPLOY_URL")
+          echo "Response: $RESPONSE"
+          
+          # Check if the deployment was successful
+          if echo "$RESPONSE" | grep -q "Complete monitoring stack redeployment successful"; then
+            echo "✅ Monitoring stack redeployment triggered successfully!"
           else
-            echo "Prometheus redeployment trigger message not detected."
-            echo "status=incomplete" >> $GITHUB_OUTPUT
-          fi
-
-      - name: Trigger Grafana Redeploy
-        id: trigger_grafana_redeploy
-        if: steps.trigger_prometheus_redeploy.outputs.status == 'complete'
-        env:
-          DEPLOY_API_KEY: ${{ secrets.DEPLOY_API_KEY }}
-        run: |
-          echo "Triggering Grafana redeploy..."
-          REDEPLOY_URL="http://188.166.89.152:8080/redeploy?api_key=${DEPLOY_API_KEY}&service=grafana"
-          redeploy_response=$(curl -s -X POST "$REDEPLOY_URL")
-          echo "Redeploy response:"
-          echo "$redeploy_response"
-          if echo "$redeploy_response" | grep -q "Redeployment triggered"; then
-            echo "Grafana redeployment triggered."
-            echo "status=complete" >> $GITHUB_OUTPUT
-          else
-            echo "Grafana redeployment trigger message not detected."
-            echo "status=incomplete" >> $GITHUB_OUTPUT
-          fi
-
-      - name: Trigger Node-exporter Redeploy
-        id: trigger_nodeexporter_redeploy
-        if: steps.trigger_grafana_redeploy.outputs.status == 'complete'
-        env:
-          DEPLOY_API_KEY: ${{ secrets.DEPLOY_API_KEY }}
-        run: |
-          echo "Triggering Node-exporter redeploy..."
-          REDEPLOY_URL="http://188.166.89.152:8080/redeploy?api_key=${DEPLOY_API_KEY}&service=node-exporter"
-          redeploy_response=$(curl -s -X POST "$REDEPLOY_URL")
-          echo "Redeploy response:"
-          echo "$redeploy_response"
-          if echo "$redeploy_response" | grep -q "Redeployment triggered"; then
-            echo "Node-exporter redeployment triggered."
-            echo "status=complete" >> $GITHUB_OUTPUT
-          else
-            echo "Node-exporter redeployment trigger message not detected."
-            echo "status=incomplete" >> $GITHUB_OUTPUT
-          fi
-
-      - name: Trigger Alertmanager Redeploy
-        id: trigger_alertmanager_redeploy
-        if: steps.trigger_nodeexporter_redeploy.outputs.status == 'complete'
-        env:
-          DEPLOY_API_KEY: ${{ secrets.DEPLOY_API_KEY }}
-        run: |
-          echo "Triggering Alertmanager redeploy..."
-          REDEPLOY_URL="http://188.166.89.152:8080/redeploy?api_key=${DEPLOY_API_KEY}&service=alertmanager"
-          redeploy_response=$(curl -s -X POST "$REDEPLOY_URL")
-          echo "Redeploy response:"
-          echo "$redeploy_response"
-          if echo "$redeploy_response" | grep -q "Redeployment triggered"; then
-            echo "Alertmanager redeployment triggered."
-            echo "status=complete" >> $GITHUB_OUTPUT
-          else
-            echo "Alertmanager redeployment trigger message not detected."
-            echo "status=incomplete" >> $GITHUB_OUTPUT
-          fi
-
-      - name: Trigger cAdvisor Redeploy
-        id: trigger_cadvisor_redeploy
-        if: steps.trigger_alertmanager_redeploy.outputs.status == 'complete'
-        env:
-          DEPLOY_API_KEY: ${{ secrets.DEPLOY_API_KEY }}
-        run: |
-          echo "Triggering cAdvisor redeploy..."
-          REDEPLOY_URL="http://188.166.89.152:8080/redeploy?api_key=${DEPLOY_API_KEY}&service=cadvisor"
-          redeploy_response=$(curl -s -X POST "$REDEPLOY_URL")
-          echo "Redeploy response:"
-          echo "$redeploy_response"
-          if echo "$redeploy_response" | grep -q "Redeployment triggered"; then
-            echo "cAdvisor redeployment triggered."
-            echo "status=complete" >> $GITHUB_OUTPUT
-          else
-            echo "cAdvisor redeployment trigger message not detected."
-            echo "status=incomplete" >> $GITHUB_OUTPUT
-          fi
-
-      - name: Verify Redeployment Completion
-        run: |
-          if [ "${{ steps.trigger_prometheus_redeploy.outputs.status }}" = "complete" ] && \
-             [ "${{ steps.trigger_grafana_redeploy.outputs.status }}" = "complete" ] && \
-             [ "${{ steps.trigger_nodeexporter_redeploy.outputs.status }}" = "complete" ] && \
-             [ "${{ steps.trigger_alertmanager_redeploy.outputs.status }}" = "complete" ] && \
-             [ "${{ steps.trigger_cadvisor_redeploy.outputs.status }}" = "complete" ]; then
-            echo "All monitoring components redeployment complete."
-          else
-            echo "Redeployment not complete for all components. Exiting." && exit 1
+            echo "❌ Monitoring stack redeployment failed:"
+            echo "$RESPONSE"
+            exit 1
           fi 
