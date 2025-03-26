@@ -150,11 +150,12 @@ GF_SECURITY_ADMIN_PASSWORD=ReachMyWeight321
 GF_USERS_ALLOW_SIGN_UP=false
 EOF
 
-# Create main docker-stack.yml for RMW application
+# Create combined docker-stack.yml
 cat > docker-stack.yml << 'EOF'
 version: '3.8'
 
 services:
+  # Application Services
   rmw_deployment:
     image: steelduck1/rmw-deployment:latest
     ports:
@@ -232,20 +233,7 @@ services:
     networks:
       - rmw-network
 
-networks:
-  rmw-network:
-    driver: overlay
-    external: false
-
-volumes:
-  rmw_database_data:
-EOF
-
-# Create separate stack file for monitoring
-cat > monitoring-stack.yml << 'EOF'
-version: '3.7'
-
-services:
+  # Monitoring Services
   prometheus:
     image: prom/prometheus:v2.36.2
     volumes:
@@ -348,20 +336,17 @@ services:
 
 networks:
   rmw-network:
-    external: true
+    driver: overlay
 
 volumes:
-  prometheus_data: {}
-  grafana_data: {}
+  rmw_database_data:
+  prometheus_data:
+  grafana_data:
 EOF
 
-# Deploy the application stack
-echo "📦 Deploying main application stack..."
+# Deploy the stack
+echo "📦 Deploying combined application and monitoring stack..."
 docker stack deploy -c docker-stack.yml rmw
-
-# Deploy the monitoring stack
-echo "📦 Deploying monitoring stack..."
-docker stack deploy -c monitoring-stack.yml monitoring
 
 # Save files to a permanent location
 mkdir -p ~/rmw-stack
@@ -385,5 +370,4 @@ echo "AlertManager: http://localhost:9093"
 echo "cAdvisor: http://localhost:8082"
 echo "Node Exporter: http://localhost:9100"
 echo ""
-echo "You can check stack status with: docker stack services rmw"
-echo "You can check monitoring status with: docker stack services monitoring" 
+echo "You can check stack status with: docker stack services rmw" 

@@ -1,0 +1,190 @@
+version: '3.8'
+
+services:
+  # Application Services
+  rmw_deployment:
+    image: steelduck1/rmw-deployment:latest
+    ports:
+      - "8080:8080"
+    environment:
+      - DEPLOY_API_KEY=Belastingdienst321!
+      - DOCKER_USERNAME=steelduck1
+      - DOCKER_PASSWORD=dckr_pat_kGDJWvFImSRa5a5auIM5m0a2zLR1
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: any
+      update_config:
+        parallelism: 1
+        delay: 10s
+        order: start-first
+    networks:
+      - rmw-network
+
+  rmw_frontend:
+    image: steelduck1/rmw-frontend:latest
+    ports:
+      - "80:8000"
+    environment:
+      - DATABASE_API_URL=http://rmw_database:8002
+      - ORIGINAL_API_URL=http://rmw_backend:8001
+    deploy:
+      replicas: 2
+      restart_policy:
+        condition: any
+      update_config:
+        parallelism: 1
+        delay: 10s
+        order: start-first
+    networks:
+      - rmw-network
+
+  rmw_backend:
+    image: steelduck1/rmw-backend:latest
+    ports:
+      - "8001:8001"
+    environment:
+      - DATABASE_API_URL=http://rmw_database:8002
+    deploy:
+      replicas: 2
+      restart_policy:
+        condition: any
+      update_config:
+        parallelism: 1
+        delay: 10s
+        order: start-first
+    networks:
+      - rmw-network
+    depends_on:
+      - rmw_database
+
+  rmw_database:
+    image: steelduck1/rmw-database:latest
+    ports:
+      - "8002:8002"
+    environment:
+      - SQLITE_CONNECTION_PARAMS=check_same_thread=False
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: any
+      update_config:
+        parallelism: 1
+        delay: 10s
+        order: start-first
+    volumes:
+      - rmw_database_data:/app/data
+    networks:
+      - rmw-network
+
+  # Monitoring Services
+  prometheus:
+    image: prom/prometheus:v2.36.2
+    volumes:
+      - ./RMW-Monitoring/prometheus/:/etc/prometheus/
+      - prometheus_data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/usr/share/prometheus/console_libraries'
+      - '--web.console.templates=/usr/share/prometheus/consoles'
+      - '--web.enable-lifecycle'
+      - '--web.enable-admin-api'
+    ports:
+      - 9090:9090
+    depends_on:
+      - cadvisor
+    networks:
+      - rmw-network
+    deploy:
+      placement:
+        constraints:
+          - node.role==manager
+      restart_policy:
+        condition: on-failure
+
+  node-exporter:
+    image: quay.io/prometheus/node-exporter:latest
+    volumes:
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
+      - /:/rootfs:ro
+    command: 
+      - '--path.procfs=/host/proc' 
+      - '--path.sysfs=/host/sys'
+      - --collector.filesystem.ignored-mount-points
+      - "^/(sys|proc|dev|host|etc|rootfs/var/lib/docker/containers|rootfs/var/lib/docker/overlay2|rootfs/run/docker/netns|rootfs/var/lib/docker/aufs)($$|/)"
+    ports:
+      - 9100:9100
+    networks:
+      - rmw-network
+    deploy:
+      mode: global
+      restart_policy:
+          condition: on-failure
+
+  alertmanager:
+    image: prom/alertmanager
+    ports:
+      - 9093:9093
+    volumes:
+      - "./RMW-Monitoring/alertmanager/:/etc/alertmanager/"
+    networks:
+      - rmw-network
+    command:
+      - '--config.file=/etc/alertmanager/config.yml'
+      - '--storage.path=/alertmanager'
+    deploy:
+      placement:
+        constraints:
+           - node.role==manager
+      restart_policy:
+        condition: on-failure    
+
+  cadvisor:
+    image: gcr.io/cadvisor/cadvisor
+    volumes:
+      - /:/rootfs:ro
+      - /var/run:/var/run:rw
+      - /sys:/sys:ro
+      - /var/lib/docker/:/var/lib/docker:ro
+    ports:
+      - 8082:8080  # Changed from 8080 to avoid conflict with rmw_deployment
+    networks:
+      - rmw-network
+    deploy:
+      mode: global
+      restart_policy:
+          condition: on-failure
+
+  grafana:
+    image: grafana/grafana
+    depends_on:
+      - prometheus
+    ports:
+      - 3000:3000
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./RMW-Monitoring/grafana/provisioning/:/etc/grafana/provisioning/
+    env_file:
+      - ./RMW-Monitoring/grafana/config.monitoring
+    networks:
+      - rmw-network
+    user: "472"
+    deploy:
+      placement:
+        constraints:
+          - node.role==manager
+      restart_policy:
+        condition: on-failure
+
+networks:
+  rmw-network:
+    driver: overlay
+
+volumes:
+  rmw_database_data:
+  prometheus_data:
+  grafana_data: 
