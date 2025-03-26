@@ -8,7 +8,7 @@ services:
     environment:
       - DEPLOY_API_KEY=Belastingdienst321!
       - DOCKER_USERNAME=steelduck1
-      - DOCKER_PASSWORD=dckr_pat_kGDJWvFImSRa5a5auIM5m0a2zLR1
+      - DOCKER_PASSWORD=dckr_pat_31ZfA-0SCQzQiJxY2Vfw9Tjau_0
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
     deploy:
