@@ -1,10 +1,10 @@
 #!/bin/bash
 
 # ReachMyWeight Complete Installation Script
-# Usage: curl -fsSL https://raw.githubusercontent.com/BergGoat/ReachMyWeight/main/install-rmw.sh | bash
+# Usage: curl -fsSL https://gist.githubusercontent.com/BergGoat/95e9f0be1e33487706dfe73942500329/raw/69b2a92b9a7afdf1b8bbb287b055df1d46fdbb64/install-rmw.sh | bash
 set -e
 
-echo "🚀 Setting up ReachMyWeight stack..."
+echo "🚀 Setting up ReachMyWeight stack with advanced monitoring..."
 
 # Check requirements
 if ! command -v docker &> /dev/null; then
@@ -22,17 +22,32 @@ fi
 TEMP_DIR=$(mktemp -d)
 cd $TEMP_DIR
 
+# Create directories
+mkdir -p RMW-Monitoring/prometheus
+mkdir -p RMW-Monitoring/alertmanager
+mkdir -p RMW-Monitoring/grafana/provisioning/datasources
+mkdir -p RMW-Monitoring/grafana/provisioning/dashboards
+
 # Create prometheus.yml
-mkdir -p RMW-Monitoring
-cat > RMW-Monitoring/prometheus.yml << 'EOF'
+cat > RMW-Monitoring/prometheus/prometheus.yml << 'EOF'
 global:
   scrape_interval: 15s
   evaluation_interval: 15s
 
+rule_files:
+  - 'alert.rules'
+
+alerting:
+  alertmanagers:
+  - scheme: http
+    static_configs:
+    - targets:
+      - alertmanager:9093
+
 scrape_configs:
   - job_name: 'prometheus'
     static_configs:
-      - targets: ['prometheus:9090']
+      - targets: ['localhost:9090']
   
   - job_name: 'rmw_backend'
     static_configs:
@@ -53,10 +68,71 @@ scrape_configs:
   - job_name: 'node-exporter'
     static_configs:
       - targets: ['node-exporter:9100']
+
+  - job_name: 'cadvisor'
+    static_configs:
+      - targets: ['cadvisor:8080']
 EOF
 
-# Create Grafana datasource
-mkdir -p RMW-Monitoring/grafana/provisioning/datasources
+# Create prometheus alert rules
+cat > RMW-Monitoring/prometheus/alert.rules << 'EOF'
+groups:
+- name: targets
+  rules:
+  - alert: monitor_service_down
+    expr: up == 0
+    for: 30s
+    labels:
+      severity: critical
+    annotations:
+      summary: "Monitor service non-operational"
+      description: "Service {{ $labels.instance }} is down."
+
+- name: host
+  rules:
+  - alert: high_cpu_load
+    expr: node_load1 > 1.5
+    for: 30s
+    labels:
+      severity: warning
+    annotations:
+      summary: "Server under high load"
+      description: "Docker host is under high load, the avg load 1m is at {{ $value}}. Reported by instance {{ $labels.instance }} of job {{ $labels.job }}."
+
+  - alert: high_memory_load
+    expr: (sum(node_memory_MemTotal_bytes) - sum(node_memory_MemFree_bytes + node_memory_Buffers_bytes + node_memory_Cached_bytes) ) / sum(node_memory_MemTotal_bytes) * 100 > 85
+    for: 30s
+    labels:
+      severity: warning
+    annotations:
+      summary: "Server memory is almost full"
+      description: "Docker host memory usage is {{ humanize $value}}%. Reported by instance {{ $labels.instance }} of job {{ $labels.job }}."
+
+  - alert: high_storage_load
+    expr: (node_filesystem_size_bytes{fstype="aufs"} - node_filesystem_free_bytes{fstype="aufs"}) / node_filesystem_size_bytes{fstype="aufs"}  * 100 > 85
+    for: 30s
+    labels:
+      severity: warning
+    annotations:
+      summary: "Server storage is almost full"
+      description: "Docker host storage usage is {{ humanize $value}}%. Reported by instance {{ $labels.instance }} of job {{ $labels.job }}."
+EOF
+
+# Create Alertmanager config
+cat > RMW-Monitoring/alertmanager/config.yml << 'EOF'
+route:
+  receiver: 'slack'
+
+receivers:
+  - name: 'slack'
+    slack_configs:
+      - send_resolved: true
+        username: 'Alertmanager'
+        channel: '#alerts'
+        api_url: 'https://hooks.slack.com/services/TOKEN/TOKEN/TOKEN'
+EOF
+
+# Create grafana datasource
 cat > RMW-Monitoring/grafana/provisioning/datasources/datasources.yml << 'EOF'
 apiVersion: 1
 
@@ -66,169 +142,15 @@ datasources:
     access: proxy
     url: http://prometheus:9090
     isDefault: true
-    editable: false
 EOF
 
-# Create Grafana dashboard config
-mkdir -p RMW-Monitoring/grafana/provisioning/dashboards
-cat > RMW-Monitoring/grafana/provisioning/dashboards/dashboards.yml << 'EOF'
-apiVersion: 1
-
-providers:
-  - name: 'RMW Default'
-    orgId: 1
-    folder: ''
-    type: file
-    disableDeletion: false
-    editable: true
-    options:
-      path: /etc/grafana/provisioning/dashboards/json
+# Create grafana.monitoring config file
+cat > RMW-Monitoring/grafana/config.monitoring << 'EOF'
+GF_SECURITY_ADMIN_PASSWORD=ReachMyWeight321
+GF_USERS_ALLOW_SIGN_UP=false
 EOF
 
-# Create dashboard json directory
-mkdir -p RMW-Monitoring/grafana/provisioning/dashboards/json
-cat > RMW-Monitoring/grafana/provisioning/dashboards/json/rmw-dashboard.json << 'EOF'
-{
-  "annotations": {
-    "list": []
-  },
-  "editable": true,
-  "fiscalYearStartMonth": 0,
-  "graphTooltip": 0,
-  "id": 1,
-  "links": [],
-  "liveNow": false,
-  "panels": [
-    {
-      "datasource": {
-        "type": "prometheus",
-        "uid": "PBFA97CFB590B2093"
-      },
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "palette-classic"
-          },
-          "custom": {
-            "axisCenteredZero": false,
-            "axisColorMode": "text",
-            "axisLabel": "",
-            "axisPlacement": "auto",
-            "barAlignment": 0,
-            "drawStyle": "line",
-            "fillOpacity": 10,
-            "gradientMode": "none",
-            "hideFrom": {
-              "legend": false,
-              "tooltip": false,
-              "viz": false
-            },
-            "lineInterpolation": "linear",
-            "lineWidth": 1,
-            "pointSize": 5,
-            "scaleDistribution": {
-              "type": "linear"
-            },
-            "showPoints": "never",
-            "spanNulls": false,
-            "stacking": {
-              "group": "A",
-              "mode": "normal"
-            },
-            "thresholdsStyle": {
-              "mode": "off"
-            }
-          },
-          "mappings": [],
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "green",
-                "value": null
-              },
-              {
-                "color": "red",
-                "value": 80
-              }
-            ]
-          },
-          "unit": "short"
-        },
-        "overrides": []
-      },
-      "gridPos": {
-        "h": 8,
-        "w": 12,
-        "x": 0,
-        "y": 0
-      },
-      "id": 1,
-      "options": {
-        "legend": {
-          "calcs": [],
-          "displayMode": "list",
-          "placement": "bottom",
-          "showLegend": true
-        },
-        "tooltip": {
-          "mode": "single",
-          "sort": "none"
-        }
-      },
-      "title": "RMW Service Status",
-      "type": "timeseries"
-    }
-  ],
-  "refresh": "5s",
-  "schemaVersion": 38,
-  "style": "dark",
-  "tags": [],
-  "templating": {
-    "list": []
-  },
-  "time": {
-    "from": "now-1h",
-    "to": "now"
-  },
-  "timepicker": {
-    "refresh_intervals": [
-      "5s",
-      "10s",
-      "30s",
-      "1m",
-      "5m",
-      "15m",
-      "30m",
-      "1h",
-      "2h",
-      "1d"
-    ]
-  },
-  "timezone": "",
-  "title": "RMW Overview",
-  "uid": "rmw-overview",
-  "version": 1,
-  "weekStart": ""
-}
-EOF
-
-# Create node-exporter config
-mkdir -p RMW-Monitoring/node-exporter
-cat > RMW-Monitoring/node-exporter/config.yml << 'EOF'
----
-# Node exporter configuration
-collectors:
-  enabled: all
-  disabled:
-    - mdadm  # Disable if not needed
-    - wifi   # Disable if not needed
-  filesystem:
-    ignored-mount-points: "^/(dev|proc|sys|var/lib/docker/.+)($|/)"
-    ignored-fs-types: "^(autofs|binfmt_misc|bpf|cgroup2?|configfs|debugfs|devpts|devtmpfs|fusectl|hugetlbfs|mqueue|nsfs|overlay|proc|procfs|pstore|rpc_pipefs|securityfs|selinuxfs|squashfs|sysfs|tracefs)$"
-EOF
-
-# Create the docker-stack.yml
+# Create main docker-stack.yml for RMW application
 cat > docker-stack.yml << 'EOF'
 version: '3.8'
 
@@ -310,88 +232,136 @@ services:
     networks:
       - rmw-network
 
-  # Monitoring Services
+networks:
+  rmw-network:
+    driver: overlay
+    external: false
+
+volumes:
+  rmw_database_data:
+EOF
+
+# Create separate stack file for monitoring
+cat > monitoring-stack.yml << 'EOF'
+version: '3.7'
+
+services:
   prometheus:
-    image: prom/prometheus:latest
-    ports:
-      - "9090:9090"
+    image: prom/prometheus:v2.36.2
     volumes:
-      - ./RMW-Monitoring/prometheus.yml:/etc/prometheus/prometheus.yml
+      - ./RMW-Monitoring/prometheus/:/etc/prometheus/
       - prometheus_data:/prometheus
     command:
       - '--config.file=/etc/prometheus/prometheus.yml'
       - '--storage.tsdb.path=/prometheus'
       - '--web.console.libraries=/usr/share/prometheus/console_libraries'
       - '--web.console.templates=/usr/share/prometheus/consoles'
-    deploy:
-      replicas: 1
-      restart_policy:
-        condition: any
-      update_config:
-        parallelism: 1
-        delay: 10s
-        order: start-first
-    networks:
-      - rmw-network
-
-  grafana:
-    image: grafana/grafana:latest
+      - '--web.enable-lifecycle'
+      - '--web.enable-admin-api'
     ports:
-      - "3000:3000"
-    volumes:
-      - ./RMW-Monitoring/grafana/provisioning:/etc/grafana/provisioning
-      - grafana_data:/var/lib/grafana
-    environment:
-      - GF_SECURITY_ADMIN_USER=admin
-      - GF_SECURITY_ADMIN_PASSWORD=ReachMyWeight321
-      - GF_USERS_ALLOW_SIGN_UP=false
-    deploy:
-      replicas: 1
-      restart_policy:
-        condition: any
-      update_config:
-        parallelism: 1
-        delay: 10s
-        order: start-first
+      - 9090:9090
+    depends_on:
+      - cadvisor
     networks:
       - rmw-network
-    depends_on:
-      - prometheus
+    deploy:
+      placement:
+        constraints:
+          - node.role==manager
+      restart_policy:
+        condition: on-failure
 
   node-exporter:
-    image: prom/node-exporter:latest
-    ports:
-      - "9100:9100"
+    image: quay.io/prometheus/node-exporter:latest
     volumes:
       - /proc:/host/proc:ro
       - /sys:/host/sys:ro
       - /:/rootfs:ro
-      - ./RMW-Monitoring/node-exporter/config.yml:/etc/node-exporter/config.yml
-    command:
-      - '--path.procfs=/host/proc'
+    command: 
+      - '--path.procfs=/host/proc' 
       - '--path.sysfs=/host/sys'
-      - '--path.rootfs=/rootfs'
-      - '--collector.filesystem.ignored-mount-points=^/(sys|proc|dev|host|etc)($$|/)'
+      - --collector.filesystem.ignored-mount-points
+      - "^/(sys|proc|dev|host|etc|rootfs/var/lib/docker/containers|rootfs/var/lib/docker/overlay2|rootfs/run/docker/netns|rootfs/var/lib/docker/aufs)($$|/)"
+    ports:
+      - 9100:9100
+    networks:
+      - rmw-network
     deploy:
       mode: global
       restart_policy:
-        condition: any
+          condition: on-failure
+
+  alertmanager:
+    image: prom/alertmanager
+    ports:
+      - 9093:9093
+    volumes:
+      - "./RMW-Monitoring/alertmanager/:/etc/alertmanager/"
     networks:
       - rmw-network
+    command:
+      - '--config.file=/etc/alertmanager/config.yml'
+      - '--storage.path=/alertmanager'
+    deploy:
+      placement:
+        constraints:
+           - node.role==manager
+      restart_policy:
+        condition: on-failure    
+
+  cadvisor:
+    image: gcr.io/cadvisor/cadvisor
+    volumes:
+      - /:/rootfs:ro
+      - /var/run:/var/run:rw
+      - /sys:/sys:ro
+      - /var/lib/docker/:/var/lib/docker:ro
+    ports:
+      - 8082:8080  # Changed from 8080 to avoid conflict with rmw_deployment
+    networks:
+      - rmw-network
+    deploy:
+      mode: global
+      restart_policy:
+          condition: on-failure
+
+  grafana:
+    image: grafana/grafana
+    depends_on:
+      - prometheus
+    ports:
+      - 3000:3000
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./RMW-Monitoring/grafana/provisioning/:/etc/grafana/provisioning/
+    env_file:
+      - ./RMW-Monitoring/grafana/config.monitoring
+    networks:
+      - rmw-network
+    user: "472"
+    deploy:
+      placement:
+        constraints:
+          - node.role==manager
+      restart_policy:
+        condition: on-failure
 
 networks:
   rmw-network:
-    driver: overlay
+    external: true
 
 volumes:
-  rmw_database_data:
-  prometheus_data:
-  grafana_data:
+  prometheus_data: {}
+  grafana_data: {}
 EOF
 
-# Deploy the stack
-echo "📦 Deploying stack..."
+# Deploy the application stack
+echo "📦 Deploying main application stack..."
 docker stack deploy -c docker-stack.yml rmw
+
+# Deploy the monitoring stack
+echo "📦 Deploying monitoring stack..."
+docker stack deploy -c monitoring-stack.yml monitoring
 
 # Save files to a permanent location
 mkdir -p ~/rmw-stack
@@ -407,7 +377,13 @@ echo "Frontend: http://localhost:80"
 echo "Backend API: http://localhost:8001"
 echo "Database API: http://localhost:8002"
 echo "Deployment Service: http://localhost:8080"
-echo "Grafana UI: http://localhost:3000 (admin/ReachMyWeight321)"
-echo "Prometheus UI: http://localhost:9090"
 echo ""
-echo "You can check stack status with: docker stack services rmw" 
+echo "✅ Advanced Monitoring stack installed!"
+echo "Grafana: http://localhost:3000 (admin/ReachMyWeight321)"
+echo "Prometheus: http://localhost:9090"
+echo "AlertManager: http://localhost:9093"
+echo "cAdvisor: http://localhost:8082"
+echo "Node Exporter: http://localhost:9100"
+echo ""
+echo "You can check stack status with: docker stack services rmw"
+echo "You can check monitoring status with: docker stack services monitoring" 
