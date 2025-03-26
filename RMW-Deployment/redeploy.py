@@ -40,19 +40,27 @@ SERVICE_CONFIG = {
     "node-exporter": {
         "image": "prom/node-exporter:latest",
         "service_name": "rmw_node-exporter"
+    },
+    "alertmanager": {
+        "image": "prom/alertmanager:latest",
+        "service_name": "rmw_alertmanager"
+    },
+    "cadvisor": {
+        "image": "gcr.io/cadvisor/cadvisor:latest",
+        "service_name": "rmw_cadvisor"
     }
 }
 
 @app.post("/redeploy")
 async def redeploy(
     api_key: str,
-    service: str = Query(None, description="Specific service to update (frontend, backend, database, deployment)")
+    service: str = Query(None, description="Specific service to update (frontend, backend, database, deployment, prometheus, grafana, node-exporter, alertmanager, cadvisor)")
 ):
     if api_key != DEPLOY_API_KEY:
         raise HTTPException(status_code=401, detail="Invalid API key")
     
     if not service or service not in SERVICE_CONFIG:
-        raise HTTPException(status_code=400, detail="Invalid or missing service parameter. Must be one of: frontend, backend, database, deployment")
+        raise HTTPException(status_code=400, detail="Invalid or missing service parameter. Must be one of: frontend, backend, database, deployment, prometheus, grafana, node-exporter, alertmanager, cadvisor")
     
     config = SERVICE_CONFIG[service]
     
