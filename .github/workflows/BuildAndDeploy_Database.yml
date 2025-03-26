@@ -5,6 +5,9 @@ on:
   pull_request:
     branches: ["main"]
     types: [closed]
+    paths:
+      - 'RMW-Database/**'
+      - '.github/workflows/BuildAndDeploy_Database.yml'
 
 permissions:
   contents: read
