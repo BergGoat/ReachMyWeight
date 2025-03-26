@@ -12,11 +12,6 @@ if [ -z "$DEPLOY_API_KEY" ]; then
     echo ""
 fi
 
-if [ -z "$GRAFANA_PASSWORD" ]; then
-    GRAFANA_PASSWORD=$(openssl rand -base64 12)
-    echo "Generated Grafana admin password: $GRAFANA_PASSWORD"
-fi
-
 # Check requirements
 if ! command -v docker &> /dev/null; then
     echo "❌ Docker is not installed. Please install Docker first."
@@ -44,19 +39,6 @@ fi
 if ! docker network ls | grep -q "rmw-network"; then
     echo "🌐 Creating rmw-network..."
     docker network create --driver overlay rmw-network
-fi
-
-# Update Grafana password in monitoring stack
-if [ -f "RMW-Monitoring/grafana/config.monitoring" ]; then
-    echo "🔑 Updating Grafana credentials..."
-    sed -i "s/^GF_SECURITY_ADMIN_PASSWORD=.*/GF_SECURITY_ADMIN_PASSWORD=$GRAFANA_PASSWORD/" RMW-Monitoring/grafana/config.monitoring
-else
-    echo "📝 Creating Grafana config file..."
-    mkdir -p RMW-Monitoring/grafana
-    cat > RMW-Monitoring/grafana/config.monitoring << EOF
-GF_SECURITY_ADMIN_PASSWORD=$GRAFANA_PASSWORD
-GF_USERS_ALLOW_SIGN_UP=false
-EOF
 fi
 
 # Create/update environment file for deployment service (API key only)
@@ -90,7 +72,7 @@ echo "Deployment Service: http://localhost:8080"
 echo ""
 echo "Monitoring:"
 echo "----------"
-echo "Grafana: http://localhost:3000 (admin/password: $GRAFANA_PASSWORD)"
+echo "Grafana: http://localhost:3000 (admin/foobar)"
 echo "Prometheus: http://localhost:9090"
 echo "AlertManager: http://localhost:9093"
 echo "cAdvisor: http://localhost:8082"
