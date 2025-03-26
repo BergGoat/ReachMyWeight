@@ -49,7 +49,13 @@ else
     git pull
 fi
 
-# Update Grafana password
+# Create external network if it doesn't exist
+if ! docker network ls | grep -q "rmw-network"; then
+    echo "🌐 Creating rmw-network..."
+    docker network create --driver overlay rmw-network
+fi
+
+# Update Grafana password in monitoring stack
 if [ -f "RMW-Monitoring/grafana/config.monitoring" ]; then
     echo "🔑 Updating Grafana credentials..."
     sed -i "s/^GF_SECURITY_ADMIN_PASSWORD=.*/GF_SECURITY_ADMIN_PASSWORD=$GRAFANA_PASSWORD/" RMW-Monitoring/grafana/config.monitoring
@@ -64,21 +70,11 @@ fi
 
 # Create/update environment file for deployment service
 echo "📝 Creating deployment environment file..."
-cat > .env.deployment << EOF
+cat > RMW-Deployment/.env.deployment << EOF
 DEPLOY_API_KEY=$DEPLOY_API_KEY
 DOCKER_USERNAME=$DOCKER_USERNAME
 DOCKER_PASSWORD=$DOCKER_PASSWORD
 EOF
-
-# Deploy the application stack
-echo "📦 Deploying main application stack..."
-docker stack deploy -c RMW-Deployment/docker-stack.yml --with-registry-auth rmw
-
-# Create external network if it doesn't exist
-if ! docker network ls | grep -q "rmw-network"; then
-    echo "🌐 Creating rmw-network..."
-    docker network create --driver overlay rmw-network
-fi
 
 # Update network name in the monitoring stack if needed
 if grep -q "monitor-net" RMW-Monitoring/docker-stack.yml; then
@@ -86,22 +82,31 @@ if grep -q "monitor-net" RMW-Monitoring/docker-stack.yml; then
     sed -i 's/monitor-net/rmw-network/g' RMW-Monitoring/docker-stack.yml
 fi
 
+# Deploy the application stack
+echo "📦 Deploying main application stack..."
+docker stack deploy -c RMW-Deployment/docker-stack.yml --with-registry-auth rmw
+
 # Deploy the monitoring stack
-echo "📦 Deploying monitoring stack..."
+echo "📦 Deploying monitoring stack (Prometheus, Grafana, Alertmanager, Node Exporter, cAdvisor)..."
 docker stack deploy -c RMW-Monitoring/docker-stack.yml monitoring
 
 echo "✅ ReachMyWeight installation complete!"
+echo ""
+echo "Main Application:"
+echo "----------------"
 echo "Frontend: http://localhost:80"
 echo "Backend API: http://localhost:8001"
 echo "Database API: http://localhost:8002"
 echo "Deployment Service: http://localhost:8080"
 echo ""
-echo "✅ Advanced Monitoring stack installed!"
+echo "Monitoring:"
+echo "----------"
 echo "Grafana: http://localhost:3000 (admin/password: $GRAFANA_PASSWORD)"
 echo "Prometheus: http://localhost:9090"
 echo "AlertManager: http://localhost:9093"
 echo "cAdvisor: http://localhost:8082"
 echo "Node Exporter: http://localhost:9100"
 echo ""
-echo "You can check stack status with: docker stack services rmw"
-echo "You can check monitoring status with: docker stack services monitoring" 
+echo "You can check stack status with:"
+echo "docker stack services rmw        # Application services"
+echo "docker stack services monitoring # Monitoring services" 
