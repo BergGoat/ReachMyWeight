@@ -88,23 +88,19 @@ async def redeploy(
             clean_cmd = "for vol in $(docker volume ls --format \"{{.Name}}\" | grep -E 'monitoring_|prometheus_data|grafana_data'); do docker volume rm $vol || true; done"
             subprocess.run(clean_cmd, shell=True, check=True)
             
-            # 4. Update only RMW-Monitoring folder via sparse checkout
-            print("Updating RMW-Monitoring configurations...")
-            repo_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-            monitoring_dir = os.path.join(repo_dir, "RMW-Monitoring")
+            # 4. Clone the repo to get updated monitoring configs
+            print("Getting latest monitoring configurations...")
             
-            # Remove old monitoring directory if it exists
-            if os.path.exists(monitoring_dir):
-                rm_cmd = f"rm -rf {monitoring_dir}"
-                subprocess.run(rm_cmd, shell=True, check=True)
+            # Use a fixed path where we know the repository exists
+            repo_dir = "/root/ReachMyWeight"
             
-            # Create sparse checkout for just RMW-Monitoring folder
+            # Clone the repository if not present, or update if it exists
             clone_cmd = f"""
-            cd {repo_dir} && \
-            git remote update && \
-            git checkout main && \
-            mkdir -p RMW-Monitoring && \
-            git checkout main -- RMW-Monitoring
+            if [ -d "{repo_dir}" ]; then
+                cd {repo_dir} && git pull
+            else
+                git clone https://github.com/BergGoat/ReachMyWeight.git {repo_dir}
+            fi
             """
             subprocess.run(clone_cmd, shell=True, check=True)
             
