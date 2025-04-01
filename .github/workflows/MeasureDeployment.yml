@@ -17,7 +17,7 @@ jobs:
             "height": 180,
             "age": 28,
             "activity_level": "moderate",
-            "sport": ["Football", "Tennis"],
+            "sport": ["Football"],
             "aantal_minuten_sporten": 60,
             "gewenst_gewicht": 75,
             "deficit_surplus": -500
