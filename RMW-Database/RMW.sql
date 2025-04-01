@@ -35,4 +35,20 @@
     -- Create profile for test user
     INSERT OR IGNORE INTO profiles (user_id, gender, height, age, activity_level) 
     VALUES (1, 'male', 180, 35, 'moderate');
-    
+    -- Test gebruikers docenten
+    INSERT OR IGNORE INTO users (username, password) VALUES 
+    ('docent01', 'password01'),
+    ('docent02', 'password02'),
+    ('docent03', 'password03');
+
+    -- Profielen voor docent-gebruikers
+    INSERT OR IGNORE INTO profiles (user_id, gender, height, age, activity_level) VALUES 
+    (2, 'male', 178, 45, 'moderate'),
+    (3, 'female', 165, 38, 'low'),
+    (4, 'male', 182, 50, 'high');
+
+    -- Gewichtsinvoer voor docenten
+    INSERT OR IGNORE INTO weights (user_id, weight, goal_weight) VALUES 
+    (2, 85.0, 78),
+    (3, 70.5, 65),
+    (4, 95.0, 88);

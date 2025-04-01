@@ -4,6 +4,7 @@ on:
   workflow_dispatch:
   pull_request:
     branches: [ main ]
+    types: [closed]
     paths:
       - 'RMW-Backend/**'
       - '.github/workflows/BuildAndDeploy_Backend.yml'
@@ -11,7 +12,7 @@ on:
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
-    if: github.event_name == 'workflow_dispatch' || (github.event_name == 'pull_request' && github.event.pull_request.merged == true && github.head_ref == 'Backend')
+    if: github.event_name == 'workflow_dispatch' || (github.event.pull_request.merged == true && github.event.pull_request.head.ref == 'Backend')
     
     steps:
       - uses: actions/checkout@v3
