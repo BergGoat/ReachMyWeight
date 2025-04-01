@@ -99,7 +99,7 @@ def calculate_bmr(weight, height, age, gender):
         BMR in calories per day
     """
     if gender.lower() == "male":
-        return (10 * weight) + (6.25 * height) - (5 * age) + 5
+        return (20 * weight) + (6.25 * height) - (5 * age) + 5
     elif gender.lower() == "female":
         return (10 * weight) + (6.25 * height) - (5 * age) - 161
     else:
